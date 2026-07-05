@@ -100,7 +100,10 @@ public class ChallengeDetailFragment extends Fragment {
 
         binding.challengeTitleText.setText(challenge.getTitle());
         binding.challengeDescriptionText.setText(challenge.getDescription() != null ? challenge.getDescription() : "");
-        binding.statusText.setText(challenge.getStatusEnum().name());
+        ChallengeStatus status = challenge.getStatusEnum();
+        binding.statusText.setText(status.name());
+        binding.statusText.getBackground().setTint(requireContext().getColor(getStatusColor(status)));
+        binding.statusText.setTextColor(requireContext().getColor(R.color.white));
 
         if (challenge.getMemberCount() <= 1) {
             binding.membersText.setText(R.string.solo_challenge);
@@ -108,13 +111,24 @@ public class ChallengeDetailFragment extends Fragment {
             binding.membersText.setText(getString(R.string.members_count, challenge.getMemberCount()));
         }
 
-        ChallengeStatus status = challenge.getStatusEnum();
         binding.completedBanner.setVisibility(status == ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
         binding.draftActionsLayout.setVisibility(status == ChallengeStatus.DRAFT ? View.VISIBLE : View.GONE);
         binding.socialActionsLayout.setVisibility(status == ChallengeStatus.ACTIVE || status == ChallengeStatus.COMPLETED
                 ? View.VISIBLE : View.GONE);
 
         updateTasks();
+    }
+
+    private int getStatusColor(ChallengeStatus status) {
+        switch (status) {
+            case ACTIVE:
+                return R.color.status_active;
+            case COMPLETED:
+                return R.color.status_completed;
+            case DRAFT:
+            default:
+                return R.color.status_draft;
+        }
     }
 
     private void updateTasks() {

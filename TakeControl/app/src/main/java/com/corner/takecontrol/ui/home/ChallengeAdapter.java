@@ -52,7 +52,8 @@ public class ChallengeAdapter extends RecyclerView.Adapter<ChallengeAdapter.View
 
         ChallengeStatus status = challenge.getStatusEnum();
         holder.statusText.setText(getStatusLabel(status));
-        holder.statusText.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), getStatusColor(status)));
+        holder.statusText.getBackground().setTint(ContextCompat.getColor(holder.itemView.getContext(), getStatusColor(status)));
+        holder.statusText.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.white));
 
         String members = challenge.getMemberCount() == 1
                 ? holder.itemView.getContext().getString(R.string.solo_challenge)
