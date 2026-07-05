@@ -1,0 +1,69 @@
+<resources>
+    <string name="app_name">Take Control</string>
+
+    <string name="login_title">Welcome back</string>
+    <string name="login_subtitle">Sign in to track your challenges</string>
+    <string name="register_title">Create account</string>
+    <string name="register_subtitle">Start taking control of your time</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="display_name">Display name</string>
+    <string name="sign_in">Sign in</string>
+    <string name="sign_up">Sign up</string>
+    <string name="create_account">Create account</string>
+    <string name="already_have_account">Already have an account? Sign in</string>
+    <string name="no_account">No account? Create one</string>
+    <string name="sign_out">Sign out</string>
+
+    <string name="home_title">My Challenges</string>
+    <string name="home_empty">No challenges yet.\nCreate one to take control of your goals.</string>
+    <string name="create_challenge">Create challenge</string>
+    <string name="join_challenge">Join with code</string>
+
+    <string name="challenge_title">Title</string>
+    <string name="challenge_description">Description (optional)</string>
+    <string name="duration">Duration (days)</string>
+    <string name="duration_7">7 days</string>
+    <string name="duration_30">30 days</string>
+    <string name="duration_90">90 days</string>
+    <string name="duration_custom">Custom</string>
+    <string name="add_task">Add task</string>
+    <string name="save_challenge">Save challenge</string>
+    <string name="task_title">Task title</string>
+    <string name="task_frequency">Frequency</string>
+    <string name="task_type">Type</string>
+    <string name="target_value">Target</string>
+    <string name="unit">Unit (pages, steps, kcal…)</string>
+    <string name="frequency_daily">Daily</string>
+    <string name="frequency_weekly">Weekly</string>
+    <string name="frequency_monthly">Monthly</string>
+    <string name="type_checkmark">Checkmark</string>
+    <string name="type_numeric">Numeric target</string>
+    <string name="type_duration">Duration (minutes)</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="status_draft">Draft</string>
+    <string name="status_active">Active</string>
+    <string name="status_completed">Completed</string>
+    <string name="start_challenge">Start challenge</string>
+    <string name="invite_friends">Invite friends</string>
+    <string name="share_code_copied">Share code: %1$s</string>
+    <string name="progress_percent">%1$d%% complete</string>
+    <string name="members_count">%1$d members</string>
+    <string name="solo_challenge">Solo challenge</string>
+    <string name="mark_complete">Done</string>
+    <string name="log_progress">Log</string>
+    <string name="enter_value">Enter value</string>
+    <string name="leaderboard">Leaderboard</string>
+    <string name="join_title">Join a challenge</string>
+    <string name="join_subtitle">Enter the share code from a friend</string>
+    <string name="share_code">Share code</string>
+    <string name="join">Join</string>
+    <string name="challenge_completed">Challenge completed!</string>
+    <string name="tasks_for_period">Tasks for this period</string>
+    <string name="remove">Remove</string>
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="default_web_client_id">000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com</string>
+</resources>

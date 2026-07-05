@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="task_frequencies">
+        <item>@string/frequency_daily</item>
+        <item>@string/frequency_weekly</item>
+        <item>@string/frequency_monthly</item>
+    </string-array>
+    <string-array name="task_types">
+        <item>@string/type_checkmark</item>
+        <item>@string/type_numeric</item>
+        <item>@string/type_duration</item>
+    </string-array>
+</resources>
