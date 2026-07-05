@@ -11,4 +11,12 @@
     <color name="status_draft">#757575</color>
     <color name="status_active">#2E7D32</color>
     <color name="status_completed">#1565C0</color>
+
+    <color name="task_not_started">#5C6267</color>
+    <color name="task_partial">#FF8F00</color>
+    <color name="task_completed">#2E7D32</color>
+
+    <color name="task_not_started_bg">#FFFFFF</color>
+    <color name="task_partial_bg">#FFF8E1</color>
+    <color name="task_completed_bg">#E8F5E9</color>
 </resources>

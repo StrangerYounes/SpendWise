@@ -81,11 +81,20 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
 
         if (complete) {
             holder.progressStatusText.setText("Completed for this period");
-        } else if (progress != null && task.getTaskTypeEnum() != TaskType.CHECKMARK) {
+            holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.task_completed));
+            holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.task_completed_bg));
+            holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(R.color.task_completed));
+        } else if (progress != null && task.getTaskTypeEnum() != TaskType.CHECKMARK && progress.getValue() > 0) {
             holder.progressStatusText.setText(String.format(Locale.US, "Progress: %.0f / %.0f %s",
                     progress.getValue(), task.getTargetValue(), task.getUnit() != null ? task.getUnit() : ""));
+            holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.task_partial));
+            holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.task_partial_bg));
+            holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(R.color.task_partial));
         } else {
             holder.progressStatusText.setText("Not completed yet");
+            holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.task_not_started));
+            holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.task_not_started_bg));
+            holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(android.R.color.transparent));
         }
 
         holder.completeButton.setVisibility(View.GONE);
@@ -151,6 +160,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
+        final com.google.android.material.card.MaterialCardView taskCard;
         final TextView taskTitleText;
         final TextView taskMetaText;
         final TextView progressStatusText;
@@ -159,6 +169,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
+            taskCard = (com.google.android.material.card.MaterialCardView) itemView.findViewById(R.id.taskCard);
             taskTitleText = itemView.findViewById(R.id.taskTitleText);
             taskMetaText = itemView.findViewById(R.id.taskMetaText);
             progressStatusText = itemView.findViewById(R.id.progressStatusText);
