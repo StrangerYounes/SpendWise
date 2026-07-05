@@ -2,6 +2,7 @@ package com.corner.takecontrol;
 
 import android.os.Bundle;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -24,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -59,9 +61,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (authRepository.isSignedIn()) {
-            navController.navigate(R.id.homeFragment);
-        }
+        // Initial navigation is handled by LoginFragment which redirects to HomeFragment if signed in
+        // This avoids redundant navigation and crashes during process restoration.
+
     }
 
     @Override

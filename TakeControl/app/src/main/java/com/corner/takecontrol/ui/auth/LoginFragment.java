@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.corner.takecontrol.R;
@@ -35,7 +36,11 @@ public class LoginFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         if (viewModel.isSignedIn()) {
-            Navigation.findNavController(view).navigate(R.id.action_login_to_home);
+            NavController navController = Navigation.findNavController(view);
+            if (navController.getCurrentDestination() != null &&
+                    navController.getCurrentDestination().getId() == R.id.loginFragment) {
+                navController.navigate(R.id.action_login_to_home);
+            }
             return;
         }
 
@@ -64,7 +69,11 @@ public class LoginFragment extends Fragment {
 
         viewModel.getAuthSuccess().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
-                Navigation.findNavController(view).navigate(R.id.action_login_to_home);
+                NavController navController = Navigation.findNavController(view);
+                if (navController.getCurrentDestination() != null &&
+                        navController.getCurrentDestination().getId() == R.id.loginFragment) {
+                    navController.navigate(R.id.action_login_to_home);
+                }
             }
         });
     }

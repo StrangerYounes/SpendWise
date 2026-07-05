@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.corner.takecontrol.R;
@@ -68,7 +69,11 @@ public class RegisterFragment extends Fragment {
 
         viewModel.getAuthSuccess().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
-                Navigation.findNavController(view).navigate(R.id.action_register_to_home);
+                NavController navController = Navigation.findNavController(view);
+                if (navController.getCurrentDestination() != null &&
+                        navController.getCurrentDestination().getId() == R.id.registerFragment) {
+                    navController.navigate(R.id.action_register_to_home);
+                }
             }
         });
     }

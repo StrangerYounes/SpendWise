@@ -35,6 +35,42 @@ public final class ProgressCalculator {
         }
 
         LocalDate start = toLocalDate(challenge.getStartDate());
+        LocalDate end = toLocalDate(challenge.getEndDate());
+        if (start == null || end == null) {
+            return 0;
+        }
+
+        int expected = 0;
+        int completed = 0;
+        Map<String, TaskProgress> progressMap = mapProgressForUser(progressList, userId);
+
+        for (ChallengeTask task : tasks) {
+            TaskFrequency frequency = task.getFrequencyEnum();
+            List<String> periodKeys = PeriodKeyUtil.getPeriodKeysBetween(frequency, start, end);
+            expected += periodKeys.size();
+            for (String periodKey : periodKeys) {
+                TaskProgress progress = progressMap.get(task.getId() + "_" + periodKey);
+                if (isPeriodComplete(task, progress)) {
+                    completed++;
+                }
+            }
+        }
+
+        if (expected == 0) {
+            return 0;
+        }
+        return Math.round((completed * 100f) / expected);
+    }
+
+    public static int calculateProgressSoFarPercent(Challenge challenge,
+                                                    List<ChallengeTask> tasks,
+                                                    List<TaskProgress> progressList,
+                                                    String userId) {
+        if (challenge == null || tasks == null || tasks.isEmpty()) {
+            return 0;
+        }
+
+        LocalDate start = toLocalDate(challenge.getStartDate());
         LocalDate end = getEffectiveEndDate(challenge);
         if (start == null || end == null) {
             return 0;
@@ -84,6 +120,13 @@ public final class ProgressCalculator {
         if (challenge.getStatusEnum() != ChallengeStatus.ACTIVE) {
             return false;
         }
+        
+        LocalDate endDate = toLocalDate(challenge.getEndDate());
+        if (endDate == null || LocalDate.now().isBefore(endDate)) {
+            // Can only complete if the end date has passed or reached
+            return false;
+        }
+
         return calculateCompletionPercent(challenge, tasks, progressList, userId) >= 100;
     }
 

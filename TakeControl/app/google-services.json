@@ -1,26 +1,21 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "take-control-dev",
-    "storage_bucket": "take-control-dev.appspot.com"
+    "project_number": "1093231432235",
+    "project_id": "take-control-a1b83",
+    "storage_bucket": "take-control-a1b83.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:1093231432235:android:1eff5ef4795c0fd0d0906e",
         "android_client_info": {
           "package_name": "com.corner.takecontrol"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "REPLACE_WITH_YOUR_FIREBASE_API_KEY"
+          "current_key": "AIzaSyBcBllPQBT0sVhbz39jzLVhVxiqeiJ5-PQ"
         }
       ],
       "services": {

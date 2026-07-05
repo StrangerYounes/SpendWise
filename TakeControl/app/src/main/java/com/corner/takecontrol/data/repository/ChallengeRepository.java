@@ -7,6 +7,7 @@ import com.corner.takecontrol.data.model.TaskProgress;
 import com.corner.takecontrol.util.ShareCodeGenerator;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -224,7 +225,7 @@ public class ChallengeRepository {
                         callback.onError("Challenge not found. Check the code and try again.");
                         return;
                     }
-                    QueryDocumentSnapshot doc = snapshot.getDocuments().get(0);
+                    DocumentSnapshot doc = snapshot.getDocuments().get(0);
                     Challenge challenge = doc.toObject(Challenge.class);
                     if (challenge == null) {
                         callback.onError("Challenge not found.");
