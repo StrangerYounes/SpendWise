@@ -1,15 +1,12 @@
 package com.corner.takecontrol.ui.challenge;
 
-import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.corner.takecontrol.R;
@@ -18,6 +15,9 @@ import com.corner.takecontrol.data.model.TaskProgress;
 import com.corner.takecontrol.data.model.TaskType;
 import com.corner.takecontrol.util.PeriodKeyUtil;
 import com.corner.takecontrol.util.ProgressCalculator;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -100,15 +100,27 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         holder.completeButton.setVisibility(View.GONE);
         holder.logButton.setVisibility(View.GONE);
 
-        if (!readOnly && !complete) {
+        if (!readOnly) {
             if (task.getTaskTypeEnum() == TaskType.CHECKMARK) {
                 holder.completeButton.setVisibility(View.VISIBLE);
-                holder.completeButton.setOnClickListener(v -> {
-                    TaskProgress newProgress = progress != null ? progress
-                            : new TaskProgress(getUserId(), task.getId(), periodKey, 0, true);
-                    newProgress.setCompleted(true);
-                    listener.onComplete(task, newProgress);
-                });
+                MaterialButton btn = (MaterialButton) holder.completeButton;
+                if (complete) {
+                    btn.setText(R.string.undo);
+                    btn.setOnClickListener(v -> {
+                        if (progress != null) {
+                            progress.setCompleted(false);
+                            listener.onComplete(task, progress);
+                        }
+                    });
+                } else {
+                    btn.setText(R.string.mark_complete);
+                    btn.setOnClickListener(v -> {
+                        TaskProgress newProgress = progress != null ? progress
+                                : new TaskProgress(getUserId(), task.getId(), periodKey, 0, true);
+                        newProgress.setCompleted(true);
+                        listener.onComplete(task, newProgress);
+                    });
+                }
             } else {
                 holder.logButton.setVisibility(View.VISIBLE);
                 holder.logButton.setOnClickListener(v -> showLogDialog(holder.itemView, task, progress, periodKey));
@@ -117,28 +129,36 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
     }
 
     private void showLogDialog(View anchor, ChallengeTask task, TaskProgress progress, String periodKey) {
-        EditText input = new EditText(anchor.getContext());
-        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        input.setHint(anchor.getContext().getString(R.string.enter_value));
-        if (progress != null) {
-            input.setText(String.valueOf((int) progress.getValue()));
-        }
+        View dialogView = LayoutInflater.from(anchor.getContext()).inflate(R.layout.dialog_log_progress, null);
+        TextView progressInfoText = dialogView.findViewById(R.id.currentProgressText);
+        TextInputEditText valueInput = dialogView.findViewById(R.id.logValueInput);
 
-        new AlertDialog.Builder(anchor.getContext())
+        double currentVal = progress != null ? progress.getValue() : 0;
+        String unit = task.getUnit() != null ? task.getUnit() : "";
+        progressInfoText.setText(String.format(Locale.US, "Current progress: %.1f / %.1f %s",
+                currentVal, task.getTargetValue(), unit));
+
+        new MaterialAlertDialogBuilder(anchor.getContext())
                 .setTitle(task.getTitle())
-                .setView(input)
+                .setView(dialogView)
                 .setPositiveButton(R.string.log_progress, (dialog, which) -> {
-                    String valueStr = input.getText().toString().trim();
+                    String valueStr = valueInput.getText() != null ? valueInput.getText().toString().trim() : "";
                     if (valueStr.isEmpty()) {
-                        Toast.makeText(anchor.getContext(), "Enter a value", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    double value = Double.parseDouble(valueStr);
-                    TaskProgress newProgress = progress != null ? progress
-                            : new TaskProgress(getUserId(), task.getId(), periodKey, value, false);
-                    newProgress.setValue(value);
-                    newProgress.setCompleted(value >= task.getTargetValue());
-                    listener.onLogProgress(task, newProgress, value);
+                    try {
+                        double increment = Double.parseDouble(valueStr);
+                        double newValue = currentVal + increment;
+
+                        TaskProgress newProgress = progress != null ? progress
+                                : new TaskProgress(getUserId(), task.getId(), periodKey, newValue, false);
+                        newProgress.setValue(newValue);
+                        newProgress.setCompleted(newValue >= task.getTargetValue());
+
+                        listener.onLogProgress(task, newProgress, increment);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(anchor.getContext(), "Invalid value", Toast.LENGTH_SHORT).show();
+                    }
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
@@ -169,7 +189,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            taskCard = (com.google.android.material.card.MaterialCardView) itemView.findViewById(R.id.taskCard);
+            taskCard = itemView.findViewById(R.id.taskCard);
             taskTitleText = itemView.findViewById(R.id.taskTitleText);
             taskMetaText = itemView.findViewById(R.id.taskMetaText);
             progressStatusText = itemView.findViewById(R.id.progressStatusText);

@@ -54,6 +54,10 @@
     <string name="solo_challenge">Solo challenge</string>
     <string name="mark_complete">Done</string>
     <string name="log_progress">Log</string>
+    <string name="add_value">Add progress</string>
+    <string name="undo">Undo</string>
+    <string name="edit">Edit</string>
+    <string name="log_message">The value you enter will be added to your current progress.</string>
     <string name="enter_value">Enter value</string>
     <string name="leaderboard">Leaderboard</string>
     <string name="join_title">Join a challenge</string>

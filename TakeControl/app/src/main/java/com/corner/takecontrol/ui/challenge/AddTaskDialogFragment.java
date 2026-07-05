@@ -5,19 +5,19 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
 import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.ChallengeTask;
 import com.corner.takecontrol.data.model.TaskFrequency;
 import com.corner.takecontrol.data.model.TaskType;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -38,33 +38,34 @@ public class AddTaskDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_task, null);
         TextInputEditText titleInput = view.findViewById(R.id.taskTitleInput);
-        Spinner frequencySpinner = view.findViewById(R.id.frequencySpinner);
-        Spinner typeSpinner = view.findViewById(R.id.typeSpinner);
+        AutoCompleteTextView frequencySpinner = view.findViewById(R.id.frequencySpinner);
+        AutoCompleteTextView typeSpinner = view.findViewById(R.id.typeSpinner);
         TextInputLayout targetLayout = view.findViewById(R.id.targetLayout);
         TextInputEditText targetInput = view.findViewById(R.id.targetInput);
         TextInputLayout unitLayout = view.findViewById(R.id.unitLayout);
         TextInputEditText unitInput = view.findViewById(R.id.unitInput);
 
-        ArrayAdapter<CharSequence> frequencyAdapter = ArrayAdapter.createFromResource(
-                requireContext(), R.array.task_frequencies, android.R.layout.simple_spinner_item);
-        frequencyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        String[] frequencies = getResources().getStringArray(R.array.task_frequencies);
+        ArrayAdapter<String> frequencyAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, frequencies);
         frequencySpinner.setAdapter(frequencyAdapter);
+        frequencySpinner.setText(frequencies[0], false);
 
-        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(
-                requireContext(), R.array.task_types, android.R.layout.simple_spinner_item);
-        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        String[] types = getResources().getStringArray(R.array.task_types);
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, types);
         typeSpinner.setAdapter(typeAdapter);
+        typeSpinner.setText(types[0], false);
 
-        typeSpinner.setOnItemSelectedListener(new SimpleItemSelectedListener() {
-            @Override
-            public void onItemSelected(int position) {
-                boolean checkmark = position == 0;
-                targetLayout.setVisibility(checkmark ? View.GONE : View.VISIBLE);
-                unitLayout.setVisibility(position == 1 ? View.VISIBLE : View.GONE);
-            }
+        typeSpinner.setOnItemClickListener((parent, view1, position, id) -> {
+            boolean checkmark = position == 0;
+            targetLayout.setVisibility(checkmark ? View.GONE : View.VISIBLE);
+            unitLayout.setVisibility(position == 1 ? View.VISIBLE : View.GONE);
         });
 
-        return new AlertDialog.Builder(requireContext())
+        // Default visibility
+        targetLayout.setVisibility(View.GONE);
+        unitLayout.setVisibility(View.GONE);
+
+        return new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.add_task)
                 .setView(view)
                 .setPositiveButton(R.string.add, (dialog, which) -> {
@@ -74,8 +75,26 @@ public class AddTaskDialogFragment extends DialogFragment {
                         return;
                     }
 
-                    TaskFrequency frequency = TaskFrequency.values()[frequencySpinner.getSelectedItemPosition()];
-                    TaskType type = TaskType.values()[typeSpinner.getSelectedItemPosition()];
+                    int freqPos = -1;
+                    String selectedFreq = frequencySpinner.getText().toString();
+                    for (int i = 0; i < frequencies.length; i++) {
+                        if (frequencies[i].equals(selectedFreq)) {
+                            freqPos = i;
+                            break;
+                        }
+                    }
+
+                    int typePos = -1;
+                    String selectedType = typeSpinner.getText().toString();
+                    for (int i = 0; i < types.length; i++) {
+                        if (types[i].equals(selectedType)) {
+                            typePos = i;
+                            break;
+                        }
+                    }
+
+                    TaskFrequency frequency = TaskFrequency.values()[freqPos != -1 ? freqPos : 0];
+                    TaskType type = TaskType.values()[typePos != -1 ? typePos : 0];
                     double target = 1;
                     String unit = "";
                     if (type != TaskType.CHECKMARK) {
