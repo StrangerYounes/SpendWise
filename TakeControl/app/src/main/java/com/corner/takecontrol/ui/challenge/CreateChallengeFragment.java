@@ -1,6 +1,7 @@
 package com.corner.takecontrol.ui.challenge;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.corner.takecontrol.R;
+import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.databinding.FragmentCreateChallengeBinding;
 import com.google.android.material.chip.Chip;
 
@@ -39,8 +41,8 @@ public class CreateChallengeFragment extends Fragment {
 
         taskAdapter = new PendingTaskAdapter(position -> {
             viewModel.removePendingTask(position);
-            taskAdapter.submitList(viewModel.getPendingTasks());
         });
+
         binding.tasksRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.tasksRecyclerView.setAdapter(taskAdapter);
 
@@ -50,20 +52,22 @@ public class CreateChallengeFragment extends Fragment {
             AddTaskDialogFragment dialog = new AddTaskDialogFragment();
             dialog.setTaskAddedListener(task -> {
                 viewModel.addPendingTask(task);
-                taskAdapter.submitList(viewModel.getPendingTasks());
             });
-            dialog.show(getParentFragmentManager(), "add_task");
+            dialog.show(getChildFragmentManager(), "AddTask");
         });
 
         binding.saveChallengeButton.setOnClickListener(v -> {
-            String title = binding.titleInput.getText() != null ? binding.titleInput.getText().toString() : "";
-            String description = binding.descriptionInput.getText() != null
-                    ? binding.descriptionInput.getText().toString() : "";
-            viewModel.createChallenge(title, description, getSelectedDuration());
+            String title = binding.titleInput.getText() != null ? binding.titleInput.getText().toString().trim() : "";
+            String description = binding.descriptionInput.getText() != null ? binding.descriptionInput.getText().toString().trim() : "";
+            int duration = getSelectedDuration();
+
+            viewModel.createChallenge(title, description, duration);
         });
 
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading ->
-                binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE));
+        viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
+            binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
+            binding.saveChallengeButton.setEnabled(!loading);
+        });
 
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
@@ -73,38 +77,60 @@ public class CreateChallengeFragment extends Fragment {
 
         viewModel.getChallengeCreated().observe(getViewLifecycleOwner(), challengeId -> {
             if (challengeId != null) {
-                Bundle args = new Bundle();
-                args.putString("challengeId", challengeId);
-                Navigation.findNavController(view).navigate(R.id.action_create_to_detail, args);
                 viewModel.clear();
+                Navigation.findNavController(requireView()).navigateUp();
             }
         });
+
+        viewModel.getChallengeToEdit().observe(getViewLifecycleOwner(), challenge -> {
+            if (challenge != null) {
+                renderChallenge(challenge);
+            }
+        });
+
+        viewModel.getTasksUpdated().observe(getViewLifecycleOwner(), tasks -> {
+            taskAdapter.submitList(tasks);
+        });
+
+        String challengeId = getArguments() != null ? getArguments().getString("challengeId") : null;
+        if (challengeId != null) {
+            binding.saveChallengeButton.setText(R.string.update_challenge);
+            viewModel.loadChallenge(challengeId);
+        }
+    }
+
+    private void renderChallenge(Challenge challenge) {
+        binding.titleInput.setText(challenge.getTitle());
+        binding.descriptionInput.setText(challenge.getDescription());
+        
+        int duration = challenge.getDurationDays();
+        if (duration == 7) binding.chip7.setChecked(true);
+        else if (duration == 30) binding.chip30.setChecked(true);
+        else if (duration == 90) binding.chip90.setChecked(true);
+        else {
+            binding.chipCustom.setChecked(true);
+            binding.customDurationLayout.setVisibility(View.VISIBLE);
+            binding.customDurationInput.setText(String.valueOf(duration));
+        }
+        selectedDuration = duration;
     }
 
     private void setupDurationChips() {
-        binding.chip7.setOnClickListener(v -> selectDuration(7, binding.chip7));
-        binding.chip30.setOnClickListener(v -> selectDuration(30, binding.chip30));
-        binding.chip90.setOnClickListener(v -> selectDuration(90, binding.chip90));
-        binding.chipCustom.setOnClickListener(v -> {
-            selectDuration(-1, binding.chipCustom);
-            binding.customDurationLayout.setVisibility(View.VISIBLE);
+        binding.durationChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty()) return;
+            int checkedId = checkedIds.get(0);
+            
+            binding.customDurationLayout.setVisibility(checkedId == R.id.chipCustom ? View.VISIBLE : View.GONE);
+            
+            if (checkedId == R.id.chip7) selectedDuration = 7;
+            else if (checkedId == R.id.chip30) selectedDuration = 30;
+            else if (checkedId == R.id.chip90) selectedDuration = 90;
         });
     }
 
-    private void selectDuration(int days, Chip selectedChip) {
-        for (Chip chip : new Chip[]{binding.chip7, binding.chip30, binding.chip90, binding.chipCustom}) {
-            chip.setChecked(chip == selectedChip);
-        }
-        selectedDuration = days;
-        if (days != -1) {
-            binding.customDurationLayout.setVisibility(View.GONE);
-        }
-    }
-
     private int getSelectedDuration() {
-        if (selectedDuration == -1) {
-            String custom = binding.customDurationInput.getText() != null
-                    ? binding.customDurationInput.getText().toString().trim() : "";
+        if (binding.chipCustom.isChecked()) {
+            String custom = binding.customDurationInput.getText() != null ? binding.customDurationInput.getText().toString() : "";
             try {
                 return Integer.parseInt(custom);
             } catch (NumberFormatException e) {

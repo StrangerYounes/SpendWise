@@ -76,5 +76,8 @@
         <argument
             android:name="challengeId"
             app:argType="string" />
+        <action
+            android:id="@+id/action_detail_to_edit"
+            app:destination="@id/createChallengeFragment" />
     </fragment>
 </navigation>

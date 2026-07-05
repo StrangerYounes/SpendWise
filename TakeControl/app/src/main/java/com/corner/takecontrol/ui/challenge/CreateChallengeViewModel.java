@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel;
 
 import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.data.model.ChallengeTask;
-import com.corner.takecontrol.data.model.TaskType;
 import com.corner.takecontrol.data.repository.ChallengeRepository;
 import com.corner.takecontrol.data.repository.RepositoryCallback;
 import com.google.firebase.auth.FirebaseAuth;
@@ -20,6 +19,8 @@ public class CreateChallengeViewModel extends ViewModel {
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> challengeCreated = new MutableLiveData<>();
+    private final MutableLiveData<Challenge> challengeToEdit = new MutableLiveData<>();
+    private final MutableLiveData<List<ChallengeTask>> tasksUpdated = new MutableLiveData<>();
     private final List<ChallengeTask> pendingTasks = new ArrayList<>();
     private String currentChallengeId;
 
@@ -39,6 +40,14 @@ public class CreateChallengeViewModel extends ViewModel {
         return challengeCreated;
     }
 
+    public LiveData<Challenge> getChallengeToEdit() {
+        return challengeToEdit;
+    }
+
+    public LiveData<List<ChallengeTask>> getTasksUpdated() {
+        return tasksUpdated;
+    }
+
     public List<ChallengeTask> getPendingTasks() {
         return pendingTasks;
     }
@@ -46,15 +55,63 @@ public class CreateChallengeViewModel extends ViewModel {
     public void addPendingTask(ChallengeTask task) {
         task.setOrderIndex(pendingTasks.size());
         pendingTasks.add(task);
+        tasksUpdated.setValue(new ArrayList<>(pendingTasks));
     }
 
     public void removePendingTask(int index) {
         if (index >= 0 && index < pendingTasks.size()) {
-            pendingTasks.remove(index);
+            ChallengeTask removed = pendingTasks.remove(index);
+            if (currentChallengeId != null && removed.getId() != null) {
+                challengeRepository.deleteTask(currentChallengeId, removed.getId(), new RepositoryCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {}
+                    @Override
+                    public void onError(String message) {
+                        error.setValue(message);
+                    }
+                });
+            }
             for (int i = 0; i < pendingTasks.size(); i++) {
                 pendingTasks.get(i).setOrderIndex(i);
             }
+            tasksUpdated.setValue(new ArrayList<>(pendingTasks));
         }
+    }
+
+    public void loadChallenge(String id) {
+        currentChallengeId = id;
+        loading.setValue(true);
+        challengeRepository.getChallenge(id, new RepositoryCallback<Challenge>() {
+            @Override
+            public void onSuccess(Challenge result) {
+                challengeToEdit.setValue(result);
+                loadTasks(id);
+            }
+
+            @Override
+            public void onError(String message) {
+                loading.setValue(false);
+                error.setValue(message);
+            }
+        });
+    }
+
+    private void loadTasks(String id) {
+        challengeRepository.getTasks(id, new RepositoryCallback<List<ChallengeTask>>() {
+            @Override
+            public void onSuccess(List<ChallengeTask> result) {
+                loading.setValue(false);
+                pendingTasks.clear();
+                pendingTasks.addAll(result);
+                tasksUpdated.setValue(new ArrayList<>(pendingTasks));
+            }
+
+            @Override
+            public void onError(String message) {
+                loading.setValue(false);
+                error.setValue(message);
+            }
+        });
     }
 
     public void createChallenge(String title, String description, int durationDays) {
@@ -68,6 +125,11 @@ public class CreateChallengeViewModel extends ViewModel {
         }
         if (pendingTasks.isEmpty()) {
             error.setValue("Add at least one task");
+            return;
+        }
+
+        if (currentChallengeId != null) {
+            updateChallenge(title, description, durationDays);
             return;
         }
 
@@ -89,6 +151,33 @@ public class CreateChallengeViewModel extends ViewModel {
                 });
     }
 
+    private void updateChallenge(String title, String description, int durationDays) {
+        loading.setValue(true);
+        Challenge challenge = challengeToEdit.getValue();
+        if (challenge == null) {
+            // If we don't have the object, we just update the ID part (partial update not supported by repo yet)
+            // But loadChallenge should have populated this.
+            loading.setValue(false);
+            return;
+        }
+        challenge.setTitle(title.trim());
+        challenge.setDescription(description != null ? description.trim() : "");
+        challenge.setDurationDays(durationDays);
+
+        challengeRepository.updateChallenge(currentChallengeId, challenge, new RepositoryCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                saveTasksSequentially(0);
+            }
+
+            @Override
+            public void onError(String message) {
+                loading.setValue(false);
+                error.setValue(message);
+            }
+        });
+    }
+
     private void saveTasksSequentially(int index) {
         if (index >= pendingTasks.size()) {
             loading.setValue(false);
@@ -96,9 +185,17 @@ public class CreateChallengeViewModel extends ViewModel {
             return;
         }
         ChallengeTask task = pendingTasks.get(index);
+        
+        // If task already has an ID, we don't need to re-add it (optional: update it)
+        if (task.getId() != null) {
+            saveTasksSequentially(index + 1);
+            return;
+        }
+
         challengeRepository.addTask(currentChallengeId, task, new RepositoryCallback<String>() {
             @Override
             public void onSuccess(String result) {
+                task.setId(result);
                 saveTasksSequentially(index + 1);
             }
 
@@ -113,5 +210,6 @@ public class CreateChallengeViewModel extends ViewModel {
     public void clear() {
         pendingTasks.clear();
         currentChallengeId = null;
+        challengeToEdit.setValue(null);
     }
 }

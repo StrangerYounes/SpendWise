@@ -44,6 +44,8 @@ public class ChallengeDetailFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ChallengeDetailViewModel.class);
 
+        String challengeId = getArguments() != null ? getArguments().getString("challengeId") : null;
+
         taskAdapter = new ChallengeTaskAdapter(new ChallengeTaskAdapter.TaskActionListener() {
             @Override
             public void onComplete(ChallengeTask task, TaskProgress progress) {
@@ -65,6 +67,11 @@ public class ChallengeDetailFragment extends Fragment {
 
         binding.startButton.setOnClickListener(v -> viewModel.startChallenge());
         binding.shareButton.setOnClickListener(v -> viewModel.shareChallenge());
+        binding.editButton.setOnClickListener(v -> {
+            Bundle args = new Bundle();
+            args.putString("challengeId", challengeId);
+            androidx.navigation.Navigation.findNavController(v).navigate(R.id.action_detail_to_edit, args);
+        });
 
         viewModel.getChallenge().observe(getViewLifecycleOwner(), this::renderChallenge);
         viewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> updateTasks());
@@ -87,7 +94,6 @@ public class ChallengeDetailFragment extends Fragment {
             }
         });
 
-        String challengeId = getArguments() != null ? getArguments().getString("challengeId") : null;
         if (challengeId != null) {
             viewModel.load(challengeId);
         }
@@ -111,10 +117,15 @@ public class ChallengeDetailFragment extends Fragment {
             binding.membersText.setText(getString(R.string.members_count, challenge.getMemberCount()));
         }
 
+        String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
+                ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
+        boolean isCreator = currentUserId.equals(challenge.getCreatedBy());
+
         binding.completedBanner.setVisibility(status == ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
         binding.draftActionsLayout.setVisibility(status == ChallengeStatus.DRAFT ? View.VISIBLE : View.GONE);
         binding.socialActionsLayout.setVisibility(status == ChallengeStatus.ACTIVE || status == ChallengeStatus.COMPLETED
                 ? View.VISIBLE : View.GONE);
+        binding.editButton.setVisibility(isCreator && status != ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
 
         updateTasks();
     }

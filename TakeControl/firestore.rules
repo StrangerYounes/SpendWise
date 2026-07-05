@@ -11,12 +11,8 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isMember(challenge) {
-      return isSignedIn() && request.auth.uid in challenge.data.memberIds;
-    }
-
-    function isCreator(challenge) {
-      return isSignedIn() && request.auth.uid == challenge.data.createdBy;
+    function getChallenge(challengeId) {
+      return get(/databases/$(database)/documents/challenges/$(challengeId)).data;
     }
 
     match /users/{userId} {
@@ -25,27 +21,48 @@ service cloud.firestore {
     }
 
     match /challenges/{challengeId} {
-      allow read: if isMember(resource) || isCreator(resource);
-      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid
-                    && request.auth.uid in request.resource.data.memberIds;
-      allow update: if isCreator(resource) || (
-        isSignedIn()
-        && request.auth.uid in request.resource.data.memberIds
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.createdBy ||
+        request.auth.uid in resource.data.memberIds
       );
-      allow delete: if isCreator(resource);
+
+      allow create: if isSignedIn()
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.auth.uid in request.resource.data.memberIds;
+
+      allow update: if isSignedIn() && (
+        request.auth.uid == resource.data.createdBy ||
+        (
+          request.auth.uid in resource.data.memberIds
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+        )
+      );
+
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.createdBy;
 
       match /tasks/{taskId} {
-        allow read: if isMember(get(/databases/$(database)/documents/challenges/$(challengeId)));
-        allow write: if isCreator(get(/databases/$(database)/documents/challenges/$(challengeId)))
-                     && get(/databases/$(database)/documents/challenges/$(challengeId)).data.status == 'draft';
+        allow read: if isSignedIn() && (
+          request.auth.uid == getChallenge(challengeId).createdBy ||
+          request.auth.uid in getChallenge(challengeId).memberIds
+        );
+
+        allow write: if isSignedIn()
+                     && request.auth.uid == getChallenge(challengeId).createdBy
+                     && getChallenge(challengeId).status in ['draft', 'active'];
       }
 
       match /progress/{progressId} {
-        allow read: if isMember(get(/databases/$(database)/documents/challenges/$(challengeId)));
+        allow read: if isSignedIn() && (
+          request.auth.uid == getChallenge(challengeId).createdBy ||
+          request.auth.uid in getChallenge(challengeId).memberIds
+        );
+
         allow create, update: if isSignedIn()
           && request.resource.data.userId == request.auth.uid
-          && isMember(get(/databases/$(database)/documents/challenges/$(challengeId)));
+          && (
+            request.auth.uid == getChallenge(challengeId).createdBy ||
+            request.auth.uid in getChallenge(challengeId).memberIds
+          );
       }
     }
 
