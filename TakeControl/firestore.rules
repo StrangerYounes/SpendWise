@@ -23,7 +23,8 @@ service cloud.firestore {
     match /challenges/{challengeId} {
       allow read: if isSignedIn() && (
         request.auth.uid == resource.data.createdBy ||
-        request.auth.uid in resource.data.memberIds
+        request.auth.uid in resource.data.memberIds ||
+        (resource.data.shareCode != null && request.query.limit <= 1)
       );
 
       allow create: if isSignedIn()
@@ -33,8 +34,11 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.createdBy ||
         (
-          request.auth.uid in resource.data.memberIds
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds']) &&
+          (
+            request.auth.uid in resource.data.memberIds ||
+            (resource.data.shareCode != null && request.auth.uid in request.resource.data.memberIds)
+          )
         )
       );
 
@@ -66,10 +70,6 @@ service cloud.firestore {
       }
     }
 
-    match /challenges/{document=**} {
-      allow read: if isSignedIn()
-        && resource.data.shareCode != null
-        && request.query.limit <= 1;
-    }
+
   }
 }
