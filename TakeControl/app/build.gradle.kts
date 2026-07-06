@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.googleServices)
-    alias(libs.plugins.composeCompiler)
 }
 
 android {
@@ -35,7 +34,6 @@ android {
 
     buildFeatures {
         viewBinding = true
-        compose = true
     }
 }
 
@@ -49,13 +47,6 @@ dependencies {
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.recyclerview)
-
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.activity.compose)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

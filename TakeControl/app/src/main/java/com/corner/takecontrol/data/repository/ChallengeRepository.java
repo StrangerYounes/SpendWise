@@ -6,7 +6,6 @@ import com.corner.takecontrol.data.model.ChallengeTask;
 import com.corner.takecontrol.data.model.TaskProgress;
 import com.corner.takecontrol.util.ShareCodeGenerator;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -47,25 +46,6 @@ public class ChallengeRepository {
         firestore.collection(COLLECTION_CHALLENGES)
                 .add(challenge)
                 .addOnSuccessListener(ref -> callback.onSuccess(ref.getId()))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
-    }
-
-    public void getMyChallenges(String userId, RepositoryCallback<List<Challenge>> callback) {
-        firestore.collection(COLLECTION_CHALLENGES)
-                .whereArrayContains("memberIds", userId)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    List<Challenge> challenges = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        Challenge challenge = doc.toObject(Challenge.class);
-                        challenge.setId(doc.getId());
-                        challenges.add(challenge);
-                    }
-                    challenges.sort(Comparator.comparing(
-                            (Challenge c) -> c.getCreatedAt() != null ? c.getCreatedAt().toDate().getTime() : 0L
-                    ).reversed());
-                    callback.onSuccess(challenges);
-                })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 

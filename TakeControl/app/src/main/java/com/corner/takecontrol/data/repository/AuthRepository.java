@@ -16,10 +16,6 @@ public class AuthRepository {
         firestore = FirebaseFirestore.getInstance();
     }
 
-    public FirebaseUser getCurrentUser() {
-        return auth.getCurrentUser();
-    }
-
     public boolean isSignedIn() {
         return auth.getCurrentUser() != null;
     }

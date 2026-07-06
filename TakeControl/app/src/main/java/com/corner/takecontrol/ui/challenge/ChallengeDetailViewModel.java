@@ -71,15 +71,11 @@ public class ChallengeDetailViewModel extends ViewModel {
         return shareCode;
     }
 
-    public LiveData<Boolean> getActionComplete() {
-        return actionComplete;
-    }
-
     public void load(String challengeId) {
         this.challengeId = challengeId;
         removeListeners();
 
-        challengeListener = challengeRepository.listenToChallenge(challengeId, new RepositoryCallback<Challenge>() {
+        challengeListener = challengeRepository.listenToChallenge(challengeId, new RepositoryCallback<>() {
             @Override
             public void onSuccess(Challenge result) {
                 challenge.setValue(result);
@@ -93,7 +89,7 @@ public class ChallengeDetailViewModel extends ViewModel {
             }
         });
 
-        tasksListener = challengeRepository.listenToTasks(challengeId, new RepositoryCallback<List<ChallengeTask>>() {
+        tasksListener = challengeRepository.listenToTasks(challengeId, new RepositoryCallback<>() {
             @Override
             public void onSuccess(List<ChallengeTask> result) {
                 tasks.setValue(result);
@@ -107,7 +103,7 @@ public class ChallengeDetailViewModel extends ViewModel {
             }
         });
 
-        progressListener = challengeRepository.listenToProgress(challengeId, new RepositoryCallback<List<TaskProgress>>() {
+        progressListener = challengeRepository.listenToProgress(challengeId, new RepositoryCallback<>() {
             @Override
             public void onSuccess(List<TaskProgress> result) {
                 progressList.setValue(result);
@@ -136,7 +132,7 @@ public class ChallengeDetailViewModel extends ViewModel {
 
         if (current.getStatusEnum() == ChallengeStatus.ACTIVE
                 && ProgressCalculator.shouldMarkChallengeCompleted(current, currentTasks, currentProgress, userId)) {
-            challengeRepository.completeChallenge(challengeId, new RepositoryCallback<Void>() {
+            challengeRepository.completeChallenge(challengeId, new RepositoryCallback<>() {
                 @Override
                 public void onSuccess(Void result) {
                     actionComplete.setValue(true);
@@ -162,7 +158,7 @@ public class ChallengeDetailViewModel extends ViewModel {
             return;
         }
 
-        userRepository.getUserProfiles(current.getMemberIds(), new RepositoryCallback<Map<String, UserProfile>>() {
+        userRepository.getUserProfiles(current.getMemberIds(), new RepositoryCallback<>() {
             @Override
             public void onSuccess(Map<String, UserProfile> profiles) {
                 leaderboard.setValue(ProgressCalculator.buildLeaderboard(current, currentTasks, currentProgress, profiles));
@@ -223,7 +219,7 @@ public class ChallengeDetailViewModel extends ViewModel {
             shareCode.setValue(current.getShareCode());
             return;
         }
-        challengeRepository.generateShareCode(challengeId, new RepositoryCallback<String>() {
+        challengeRepository.generateShareCode(challengeId, new RepositoryCallback<>() {
             @Override
             public void onSuccess(String result) {
                 shareCode.setValue(result);

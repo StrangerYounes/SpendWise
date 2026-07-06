@@ -48,10 +48,6 @@ public class CreateChallengeViewModel extends ViewModel {
         return tasksUpdated;
     }
 
-    public List<ChallengeTask> getPendingTasks() {
-        return pendingTasks;
-    }
-
     public void addPendingTask(ChallengeTask task) {
         task.setOrderIndex(pendingTasks.size());
         pendingTasks.add(task);
@@ -62,7 +58,7 @@ public class CreateChallengeViewModel extends ViewModel {
         if (index >= 0 && index < pendingTasks.size()) {
             ChallengeTask removed = pendingTasks.remove(index);
             if (currentChallengeId != null && removed.getId() != null) {
-                challengeRepository.deleteTask(currentChallengeId, removed.getId(), new RepositoryCallback<Void>() {
+                challengeRepository.deleteTask(currentChallengeId, removed.getId(), new RepositoryCallback<>() {
                     @Override
                     public void onSuccess(Void result) {}
                     @Override
@@ -81,7 +77,7 @@ public class CreateChallengeViewModel extends ViewModel {
     public void loadChallenge(String id) {
         currentChallengeId = id;
         loading.setValue(true);
-        challengeRepository.getChallenge(id, new RepositoryCallback<Challenge>() {
+        challengeRepository.getChallenge(id, new RepositoryCallback<>() {
             @Override
             public void onSuccess(Challenge result) {
                 challengeToEdit.setValue(result);
@@ -97,7 +93,7 @@ public class CreateChallengeViewModel extends ViewModel {
     }
 
     private void loadTasks(String id) {
-        challengeRepository.getTasks(id, new RepositoryCallback<List<ChallengeTask>>() {
+        challengeRepository.getTasks(id, new RepositoryCallback<>() {
             @Override
             public void onSuccess(List<ChallengeTask> result) {
                 loading.setValue(false);
@@ -136,7 +132,7 @@ public class CreateChallengeViewModel extends ViewModel {
         loading.setValue(true);
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         challengeRepository.createChallenge(userId, title.trim(), description != null ? description.trim() : "",
-                durationDays, new RepositoryCallback<String>() {
+                durationDays, new RepositoryCallback<>() {
                     @Override
                     public void onSuccess(String challengeId) {
                         currentChallengeId = challengeId;
@@ -164,7 +160,7 @@ public class CreateChallengeViewModel extends ViewModel {
         challenge.setDescription(description != null ? description.trim() : "");
         challenge.setDurationDays(durationDays);
 
-        challengeRepository.updateChallenge(currentChallengeId, challenge, new RepositoryCallback<Void>() {
+        challengeRepository.updateChallenge(currentChallengeId, challenge, new RepositoryCallback<>() {
             @Override
             public void onSuccess(Void result) {
                 saveTasksSequentially(0);
@@ -192,7 +188,7 @@ public class CreateChallengeViewModel extends ViewModel {
             return;
         }
 
-        challengeRepository.addTask(currentChallengeId, task, new RepositoryCallback<String>() {
+        challengeRepository.addTask(currentChallengeId, task, new RepositoryCallback<>() {
             @Override
             public void onSuccess(String result) {
                 task.setId(result);

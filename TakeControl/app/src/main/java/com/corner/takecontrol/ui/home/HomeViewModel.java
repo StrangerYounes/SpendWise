@@ -50,7 +50,7 @@ public class HomeViewModel extends ViewModel {
             return;
         }
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        userRepository.getUserProfile(userId, new RepositoryCallback<com.corner.takecontrol.data.model.UserProfile>() {
+        userRepository.getUserProfile(userId, new RepositoryCallback<>() {
             @Override
             public void onSuccess(com.corner.takecontrol.data.model.UserProfile result) {
                 if (result != null && result.getDisplayName() != null) {
@@ -67,7 +67,7 @@ public class HomeViewModel extends ViewModel {
             challengesListener.remove();
         }
         loading.setValue(true);
-        challengesListener = challengeRepository.listenToMyChallenges(userId, new RepositoryCallback<List<Challenge>>() {
+        challengesListener = challengeRepository.listenToMyChallenges(userId, new RepositoryCallback<>() {
             @Override
             public void onSuccess(List<Challenge> result) {
                 loading.setValue(false);

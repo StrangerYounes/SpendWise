@@ -37,7 +37,7 @@ public class AuthViewModel extends ViewModel {
 
     public void signIn(String email, String password) {
         loading.setValue(true);
-        authRepository.signInWithEmail(email, password, new RepositoryCallback<FirebaseUser>() {
+        authRepository.signInWithEmail(email, password, new RepositoryCallback<>() {
             @Override
             public void onSuccess(FirebaseUser result) {
                 loading.setValue(false);
@@ -54,7 +54,7 @@ public class AuthViewModel extends ViewModel {
 
     public void register(String email, String password, String displayName) {
         loading.setValue(true);
-        authRepository.registerWithEmail(email, password, displayName, new RepositoryCallback<FirebaseUser>() {
+        authRepository.registerWithEmail(email, password, displayName, new RepositoryCallback<>() {
             @Override
             public void onSuccess(FirebaseUser result) {
                 loading.setValue(false);

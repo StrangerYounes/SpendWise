@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,42 +35,6 @@ public final class ProgressCalculator {
 
         LocalDate start = toLocalDate(challenge.getStartDate());
         LocalDate end = toLocalDate(challenge.getEndDate());
-        if (start == null || end == null) {
-            return 0;
-        }
-
-        int expected = 0;
-        int completed = 0;
-        Map<String, TaskProgress> progressMap = mapProgressForUser(progressList, userId);
-
-        for (ChallengeTask task : tasks) {
-            TaskFrequency frequency = task.getFrequencyEnum();
-            List<String> periodKeys = PeriodKeyUtil.getPeriodKeysBetween(frequency, start, end);
-            expected += periodKeys.size();
-            for (String periodKey : periodKeys) {
-                TaskProgress progress = progressMap.get(task.getId() + "_" + periodKey);
-                if (isPeriodComplete(task, progress)) {
-                    completed++;
-                }
-            }
-        }
-
-        if (expected == 0) {
-            return 0;
-        }
-        return Math.round((completed * 100f) / expected);
-    }
-
-    public static int calculateProgressSoFarPercent(Challenge challenge,
-                                                    List<ChallengeTask> tasks,
-                                                    List<TaskProgress> progressList,
-                                                    String userId) {
-        if (challenge == null || tasks == null || tasks.isEmpty()) {
-            return 0;
-        }
-
-        LocalDate start = toLocalDate(challenge.getStartDate());
-        LocalDate end = getEffectiveEndDate(challenge);
         if (start == null || end == null) {
             return 0;
         }
@@ -158,7 +121,7 @@ public final class ProgressCalculator {
             return map;
         }
         for (TaskProgress progress : progressList) {
-            if (userId.equals(progress.getUserId())) {
+            if (java.util.Objects.equals(userId, progress.getUserId())) {
                 map.put(progress.getTaskId() + "_" + progress.getPeriodKey(), progress);
             }
         }
@@ -170,24 +133,5 @@ public final class ProgressCalculator {
             return null;
         }
         return timestamp.toDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    }
-
-    public static LocalDate getEffectiveEndDate(Challenge challenge) {
-        LocalDate end = toLocalDate(challenge.getEndDate());
-        LocalDate today = LocalDate.now();
-        if (end == null) {
-            return today;
-        }
-        return end.isBefore(today) ? end : today;
-    }
-
-    public static Set<String> getUniqueUserIds(List<TaskProgress> progressList) {
-        Set<String> ids = new HashSet<>();
-        if (progressList != null) {
-            for (TaskProgress progress : progressList) {
-                ids.add(progress.getUserId());
-            }
-        }
-        return ids;
     }
 }

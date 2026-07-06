@@ -43,7 +43,7 @@ public class JoinChallengeViewModel extends ViewModel {
 
         loading.setValue(true);
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        challengeRepository.joinByShareCode(userId, shareCode, new RepositoryCallback<String>() {
+        challengeRepository.joinByShareCode(userId, shareCode, new RepositoryCallback<>() {
             @Override
             public void onSuccess(String challengeId) {
                 loading.setValue(false);
