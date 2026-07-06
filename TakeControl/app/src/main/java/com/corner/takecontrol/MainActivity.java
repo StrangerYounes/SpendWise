@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         MaterialToolbar toolbar = binding.toolbar;
-        setSupportActionBar(toolbar);
 
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
@@ -41,10 +40,12 @@ public class MainActivity extends AppCompatActivity {
 
         Set<Integer> topLevelDestinations = new HashSet<>();
         topLevelDestinations.add(R.id.homeFragment);
+        topLevelDestinations.add(R.id.loginFragment);
         appBarConfiguration = new AppBarConfiguration.Builder(topLevelDestinations).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration);
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            toolbar.getMenu().clear();
             if (destination.getId() == R.id.homeFragment) {
                 toolbar.inflateMenu(R.menu.menu_home);
                 toolbar.setOnMenuItemClickListener(item -> {
@@ -56,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
                     return false;
                 });
             } else {
-                toolbar.getMenu().clear();
                 toolbar.setOnMenuItemClickListener(null);
             }
         });
