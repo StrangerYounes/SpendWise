@@ -30,4 +30,12 @@
 
     <color name="outline">#74777F</color>
     <color name="white">#FFFFFF</color>
+
+    <color name="rank_gold">#FFB300</color>
+    <color name="rank_silver">#9E9E9E</color>
+    <color name="rank_bronze">#CD7F32</color>
+    <color name="rank_default">#1B5E73</color>
+
+    <color name="current_user_highlight">#E8F4F8</color>
+    <color name="error">#B3261E</color>
 </resources>

@@ -21,6 +21,7 @@ import com.corner.takecontrol.data.model.ChallengeStatus;
 import com.corner.takecontrol.data.model.ChallengeTask;
 import com.corner.takecontrol.data.model.TaskProgress;
 import com.corner.takecontrol.databinding.FragmentChallengeDetailBinding;
+import com.corner.takecontrol.util.ChallengeUiUtil;
 
 import java.util.List;
 
@@ -58,7 +59,10 @@ public class ChallengeDetailFragment extends Fragment {
             }
         });
 
-        leaderboardAdapter = new LeaderboardAdapter();
+        leaderboardAdapter = new LeaderboardAdapter(
+                com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
+                        ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid()
+                        : "");
 
         binding.tasksRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.tasksRecyclerView.setAdapter(taskAdapter);
@@ -107,9 +111,11 @@ public class ChallengeDetailFragment extends Fragment {
         binding.challengeTitleText.setText(challenge.getTitle());
         binding.challengeDescriptionText.setText(challenge.getDescription() != null ? challenge.getDescription() : "");
         ChallengeStatus status = challenge.getStatusEnum();
-        binding.statusText.setText(status.name());
-        binding.statusText.getBackground().setTint(requireContext().getColor(getStatusColor(status)));
+        binding.statusText.setText(getString(ChallengeUiUtil.getStatusLabelRes(status)));
+        binding.statusText.getBackground().setTint(requireContext().getColor(ChallengeUiUtil.getStatusColorRes(status)));
         binding.statusText.setTextColor(requireContext().getColor(R.color.white));
+
+        ChallengeUiUtil.bindDaysRemaining(requireContext(), binding.daysRemainingText, challenge);
 
         if (challenge.getMemberCount() <= 1) {
             binding.membersText.setText(R.string.solo_challenge);
@@ -128,18 +134,6 @@ public class ChallengeDetailFragment extends Fragment {
         binding.editButton.setVisibility(isCreator && status != ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
 
         updateTasks();
-    }
-
-    private int getStatusColor(ChallengeStatus status) {
-        switch (status) {
-            case ACTIVE:
-                return R.color.status_active;
-            case COMPLETED:
-                return R.color.status_completed;
-            case DRAFT:
-            default:
-                return R.color.status_draft;
-        }
     }
 
     private void updateTasks() {

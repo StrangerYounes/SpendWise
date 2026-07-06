@@ -5,17 +5,14 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <TextView
-        android:id="@+id/emptyText"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/challengesRecyclerView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="48dp"
-        android:text="@string/home_empty"
-        android:textColor="@color/text_secondary"
-        android:textSize="16sp"
-        android:lineSpacingExtra="4dp"
-        android:visibility="gone"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="@dimen/list_bottom_padding"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -31,43 +28,67 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/challengesRecyclerView"
+    <LinearLayout
+        android:id="@+id/emptyStateLayout"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:padding="12dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="40dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.35">
 
-    <LinearLayout
+        <ImageView
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_empty_challenges" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/home_empty"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="@string/home_empty_hint"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/createFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        android:orientation="vertical"
-        android:gravity="end"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="8dp"
+        android:text="@string/create_challenge"
+        app:icon="@drawable/ic_add"
+        app:layout_constraintBottom_toTopOf="@id/joinFab"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/joinFab"
+        style="@style/Widget.Material3.FloatingActionButton.Secondary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/fab_margin"
+        android:contentDescription="@string/join_challenge"
+        app:srcCompat="@drawable/ic_join"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/createFab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="@string/create_challenge"
-            app:icon="@android:drawable/ic_menu_add"
-            app:elevation="4dp" />
-
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/joinFab"
-            style="@style/Widget.Material3.ExtendedFloatingActionButton.Secondary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/join_challenge"
-            app:icon="@android:drawable/ic_menu_share"
-            app:elevation="4dp" />
-    </LinearLayout>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@color/primary" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

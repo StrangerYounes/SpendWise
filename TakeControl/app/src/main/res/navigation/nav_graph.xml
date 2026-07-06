@@ -72,7 +72,7 @@
     <fragment
         android:id="@+id/challengeDetailFragment"
         android:name="com.corner.takecontrol.ui.challenge.ChallengeDetailFragment"
-        android:label="Challenge">
+        android:label="@string/challenge_detail">
         <argument
             android:name="challengeId"
             app:argType="string" />

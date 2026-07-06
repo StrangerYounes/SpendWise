@@ -49,6 +49,11 @@ public class HomeFragment extends Fragment {
                 Navigation.findNavController(v).navigate(R.id.action_home_to_join));
 
         viewModel.getChallenges().observe(getViewLifecycleOwner(), this::renderChallenges);
+        viewModel.getDisplayName().observe(getViewLifecycleOwner(), name -> {
+            if (name != null) {
+                adapter.setGreetingName(name);
+            }
+        });
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
             binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE);
         });
@@ -67,7 +72,7 @@ public class HomeFragment extends Fragment {
 
     private void renderChallenges(List<Challenge> challenges) {
         boolean empty = challenges == null || challenges.isEmpty();
-        binding.emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
+        binding.emptyStateLayout.setVisibility(empty ? View.VISIBLE : View.GONE);
         binding.challengesRecyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         adapter.submitList(challenges);
     }

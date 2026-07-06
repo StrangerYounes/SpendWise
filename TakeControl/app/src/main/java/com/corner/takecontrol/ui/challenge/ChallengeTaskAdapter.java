@@ -17,6 +17,7 @@ import com.corner.takecontrol.util.PeriodKeyUtil;
 import com.corner.takecontrol.util.ProgressCalculator;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -79,19 +80,29 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         holder.taskTitleText.setText(task.getTitle());
         holder.taskMetaText.setText(buildMeta(task, periodKey));
 
+        holder.taskProgressBar.setVisibility(View.GONE);
+
         if (complete) {
-            holder.progressStatusText.setText("Completed for this period");
+            holder.progressStatusText.setText(R.string.task_completed_period);
             holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.task_completed));
             holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.task_completed_bg));
             holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(R.color.task_completed));
         } else if (progress != null && task.getTaskTypeEnum() != TaskType.CHECKMARK && progress.getValue() > 0) {
-            holder.progressStatusText.setText(String.format(Locale.US, "Progress: %.0f / %.0f %s",
-                    progress.getValue(), task.getTargetValue(), task.getUnit() != null ? task.getUnit() : ""));
+            holder.progressStatusText.setText(holder.itemView.getContext().getString(
+                    R.string.task_progress_format,
+                    progress.getValue(), task.getTargetValue(),
+                    task.getUnit() != null ? task.getUnit() : ""));
             holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.task_partial));
             holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.task_partial_bg));
             holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(R.color.task_partial));
+
+            if (task.getTargetValue() > 0) {
+                int percent = (int) Math.min(100, (progress.getValue() / task.getTargetValue()) * 100);
+                holder.taskProgressBar.setVisibility(View.VISIBLE);
+                holder.taskProgressBar.setProgress(percent);
+            }
         } else {
-            holder.progressStatusText.setText("Not completed yet");
+            holder.progressStatusText.setText(R.string.task_not_completed);
             holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.task_not_started));
             holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.task_not_started_bg));
             holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(android.R.color.transparent));
@@ -184,6 +195,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         final TextView taskTitleText;
         final TextView taskMetaText;
         final TextView progressStatusText;
+        final LinearProgressIndicator taskProgressBar;
         final View completeButton;
         final View logButton;
 
@@ -193,6 +205,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
             taskTitleText = itemView.findViewById(R.id.taskTitleText);
             taskMetaText = itemView.findViewById(R.id.taskMetaText);
             progressStatusText = itemView.findViewById(R.id.progressStatusText);
+            taskProgressBar = itemView.findViewById(R.id.taskProgressBar);
             completeButton = itemView.findViewById(R.id.completeButton);
             logButton = itemView.findViewById(R.id.logButton);
         }

@@ -16,7 +16,18 @@
     <string name="sign_out">Sign out</string>
 
     <string name="home_title">My Challenges</string>
-    <string name="home_empty">No challenges yet.\nCreate one to take control of your goals.</string>
+    <string name="home_greeting">Hey, %1$s</string>
+    <string name="home_greeting_default">Hey there</string>
+    <string name="home_subtitle">Track your progress and stay on top of your goals</string>
+    <string name="home_empty">No challenges yet</string>
+    <string name="home_empty_hint">Create a challenge or join one with a friend\'s code to get started.</string>
+    <string name="days_remaining">%1$d days left</string>
+    <string name="days_remaining_one">1 day left</string>
+    <string name="challenge_ends_today">Ends today</string>
+    <string name="task_completed_period">Completed for this period</string>
+    <string name="task_not_completed">Not completed yet</string>
+    <string name="task_progress_format">Progress: %.0f / %.0f %s</string>
+    <string name="you">You</string>
     <string name="create_challenge">Create challenge</string>
     <string name="join_challenge">Join with code</string>
 
@@ -65,7 +76,9 @@
     <string name="share_code">Share code</string>
     <string name="join">Join</string>
     <string name="challenge_completed">Challenge completed!</string>
+    <string name="challenge_detail">Challenge</string>
     <string name="tasks_for_period">Tasks for this period</string>
+    <string name="tasks_section">Tasks</string>
     <string name="remove">Remove</string>
     <string name="edit_challenge">Edit Challenge</string>
     <string name="update_challenge">Update Challenge</string>
