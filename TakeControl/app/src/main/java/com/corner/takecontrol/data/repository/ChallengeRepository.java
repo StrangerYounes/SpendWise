@@ -5,6 +5,7 @@ import com.corner.takecontrol.data.model.ChallengeStatus;
 import com.corner.takecontrol.data.model.ChallengeTask;
 import com.corner.takecontrol.data.model.TaskProgress;
 import com.corner.takecontrol.util.ShareCodeGenerator;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -230,6 +231,52 @@ public class ChallengeRepository {
                             .addOnFailureListener(e -> callback.onError(e.getMessage()));
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public List<ChallengeTask> getTodayTasksSync(String userId) throws Exception {
+        // 1. Get user's challenges
+        com.google.firebase.firestore.QuerySnapshot challengeSnapshot = Tasks.await(
+                firestore.collection(COLLECTION_CHALLENGES)
+                        .whereArrayContains("memberIds", userId)
+                        .whereEqualTo("status", ChallengeStatus.ACTIVE.getValue())
+                        .get()
+        );
+
+        List<ChallengeTask> allTasks = new ArrayList<>();
+        for (DocumentSnapshot challengeDoc : challengeSnapshot.getDocuments()) {
+            // 2. Get tasks for each challenge
+            com.google.firebase.firestore.QuerySnapshot tasksSnapshot = Tasks.await(
+                    challengeDoc.getReference().collection(SUBCOLLECTION_TASKS).get()
+            );
+
+            for (DocumentSnapshot taskDoc : tasksSnapshot.getDocuments()) {
+                ChallengeTask task = taskDoc.toObject(ChallengeTask.class);
+                if (task != null) {
+                    task.setId(taskDoc.getId());
+
+                    // Filter by day of week if applicable
+                    if (task.getDaysOfWeek() != null && !task.getDaysOfWeek().isEmpty()) {
+                        int dayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+                        if (!task.getDaysOfWeek().contains(dayOfWeek)) {
+                            continue;
+                        }
+                    }
+
+                    // 3. Check if already completed today
+                    String periodKey = com.corner.takecontrol.util.PeriodKeyUtil.getCurrentPeriodKey(task.getFrequencyEnum());
+                    String progressDocId = TaskProgress.buildDocumentId(userId, task.getId(), periodKey);
+                    DocumentSnapshot progressDoc = Tasks.await(
+                            challengeDoc.getReference().collection(SUBCOLLECTION_PROGRESS).document(progressDocId).get()
+                    );
+
+                    TaskProgress progress = progressDoc.toObject(TaskProgress.class);
+                    if (progress == null || !progress.isCompleted()) {
+                        allTasks.add(task);
+                    }
+                }
+            }
+        }
+        return allTasks;
     }
 
     public void saveProgress(String challengeId, TaskProgress progress, RepositoryCallback<Void> callback) {

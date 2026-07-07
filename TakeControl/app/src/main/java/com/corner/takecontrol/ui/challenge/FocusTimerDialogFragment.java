@@ -64,7 +64,8 @@ public class FocusTimerDialogFragment extends DialogFragment {
                 .setTitle(task.getTitle())
                 .setView(view)
                 .setPositiveButton(R.string.start_timer, null)
-                .setNegativeButton(R.string.cancel, (dialog, which) -> stopTimer());
+                .setNeutralButton(R.string.cancel, (dialog, which) -> stopTimer())
+                .setNegativeButton(R.string.finish, (dialog, which) -> finishAndLog());
 
         Dialog dialog = builder.create();
         dialog.setOnShowListener(d -> {
@@ -73,21 +74,31 @@ public class FocusTimerDialogFragment extends DialogFragment {
                     pauseTimer();
                     ((TextView) v).setText(R.string.resume);
                 } else {
-                    startTimer(timerText, progressIndicator, (TextView) v);
+                    startTimer(timerText, progressIndicator);
                     ((TextView) v).setText(R.string.pause);
                 }
             });
+            
+            // Initially hide the Finish button until some progress is made
+            dialog.findViewById(android.R.id.button2).setVisibility(View.GONE);
         });
 
         return dialog;
     }
 
-    private void startTimer(TextView timerText, CircularProgressIndicator progressIndicator, TextView actionButton) {
+    private void startTimer(TextView timerText, CircularProgressIndicator progressIndicator) {
         countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 timeLeftInMillis = millisUntilFinished;
                 updateTimerText(timerText, progressIndicator);
+                
+                // Show Finish button as soon as some time has passed
+                if (totalTimeInMillis - timeLeftInMillis > 5000) {
+                    if (getDialog() != null) {
+                        getDialog().findViewById(android.R.id.button2).setVisibility(View.VISIBLE);
+                    }
+                }
             }
 
             @Override
@@ -95,14 +106,22 @@ public class FocusTimerDialogFragment extends DialogFragment {
                 isRunning = false;
                 timeLeftInMillis = 0;
                 updateTimerText(timerText, progressIndicator);
-                if (listener != null) {
-                    double minutesFinished = (double) totalTimeInMillis / (60 * 1000);
-                    listener.onTimerFinished(task, progress, minutesFinished);
-                }
-                dismiss();
+                finishAndLog();
             }
         }.start();
         isRunning = true;
+    }
+
+    private void finishAndLog() {
+        if (isRunning) stopTimer();
+        if (listener != null) {
+            long millisPassed = totalTimeInMillis - timeLeftInMillis;
+            double minutesFinished = (double) millisPassed / (60 * 1000);
+            if (minutesFinished > 0.1) { // Only log if at least 6 seconds passed
+                listener.onTimerFinished(task, progress, minutesFinished);
+            }
+        }
+        dismiss();
     }
 
     private void pauseTimer() {

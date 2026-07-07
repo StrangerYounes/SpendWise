@@ -4,6 +4,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.corner.takecontrol.R;
+import com.corner.takecontrol.TakeControlApplication;
 import com.corner.takecontrol.data.model.AppNotification;
 import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.data.model.ChallengeStatus;
@@ -198,22 +200,49 @@ public class ChallengeDetailViewModel extends ViewModel {
         if (challengeId == null) {
             return;
         }
+
+        // Find existing progress to check for completion state change
+        TaskProgress oldProgress = null;
+        List<TaskProgress> currentList = progressList.getValue();
+        if (currentList != null) {
+            for (TaskProgress p : currentList) {
+                if (p.getTaskId().equals(progress.getTaskId()) && 
+                    p.getUserId().equals(progress.getUserId()) && 
+                    p.getPeriodKey().equals(progress.getPeriodKey())) {
+                    oldProgress = p;
+                    break;
+                }
+            }
+        }
+
+        final boolean wasCompleted = oldProgress != null && oldProgress.isCompleted();
+        final boolean isNowCompleted = progress.isCompleted();
+        final boolean wasLate = oldProgress != null && "LATE".equals(oldProgress.getStatus());
+        final boolean isNowLate = "LATE".equals(progress.getStatus());
+
         challengeRepository.saveProgress(challengeId, progress, new RepositoryCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
                 actionComplete.setValue(true);
-                if (progress.isCompleted() && FirebaseAuth.getInstance().getCurrentUser() != null) {
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    ChallengeTask task = findTaskById(progress.getTaskId());
-                    if (task != null) {
-                        boolean isLate = "LATE".equals(progress.getStatus());
-                        userRepository.rewardTaskCompletion(userId, task, isLate, new RepositoryCallback<>() {
-                            @Override
-                            public void onSuccess(Void result) {}
-                            @Override
-                            public void onError(String message) {}
-                        });
-                    }
+                if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                ChallengeTask task = findTaskById(progress.getTaskId());
+                if (task == null) return;
+
+                if (!wasCompleted && isNowCompleted) {
+                    userRepository.rewardTaskCompletion(userId, task, isNowLate, new RepositoryCallback<>() {
+                        @Override
+                        public void onSuccess(Void result) {}
+                        @Override
+                        public void onError(String message) {}
+                    });
+                } else if (wasCompleted && !isNowCompleted) {
+                    userRepository.deductTaskCompletion(userId, task, wasLate, new RepositoryCallback<>() {
+                        @Override
+                        public void onSuccess(Void result) {}
+                        @Override
+                        public void onError(String message) {}
+                    });
                 }
             }
 
@@ -295,7 +324,7 @@ public class ChallengeDetailViewModel extends ViewModel {
         
         int skipsUsed = current.getMemberSkips() != null ? current.getMemberSkips().getOrDefault(userId, 0) : 0;
         if (skipsUsed >= current.getMaxSkips()) {
-            error.setValue("No skips remaining");
+            error.setValue(TakeControlApplication.getAppContext().getString(R.string.no_skips));
             return;
         }
 

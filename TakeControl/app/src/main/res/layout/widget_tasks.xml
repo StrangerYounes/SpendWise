@@ -2,10 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_rank_badge"
-    android:backgroundTint="@color/background"
+    android:layout_margin="8dp"
+    android:background="@drawable/bg_widget"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/widgetTitle"

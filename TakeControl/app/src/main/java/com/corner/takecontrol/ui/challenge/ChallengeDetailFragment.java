@@ -74,7 +74,7 @@ public class ChallengeDetailFragment extends Fragment {
                     p.setValue(newValue);
                     p.setCompleted(newValue >= t.getTargetValue());
                     viewModel.saveProgress(p);
-                    Toast.makeText(requireContext(), "Focus session finished!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), R.string.focus_session_finished, Toast.LENGTH_SHORT).show();
                 });
                 dialog.show(getChildFragmentManager(), "FocusTimer");
             }
@@ -98,10 +98,10 @@ public class ChallengeDetailFragment extends Fragment {
         binding.shareButton.setOnClickListener(v -> viewModel.shareChallenge());
         binding.skipButton.setOnClickListener(v -> {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Use Skip Day?")
-                    .setMessage("This will mark all tasks for today as skipped. You won't break your streak.")
-                    .setPositiveButton("Use Skip", (d, w) -> viewModel.useSkipDay())
-                    .setNegativeButton("Cancel", null)
+                    .setTitle(R.string.skip_day_title)
+                    .setMessage(R.string.skip_day_message)
+                    .setPositiveButton(R.string.use_skip, (d, w) -> viewModel.useSkipDay())
+                    .setNegativeButton(R.string.cancel, null)
                     .show();
         });
         binding.editButton.setOnClickListener(v -> {
@@ -169,7 +169,7 @@ public class ChallengeDetailFragment extends Fragment {
         if (status == ChallengeStatus.ACTIVE && challenge.getMaxSkips() > 0) {
             binding.skipsLayout.setVisibility(View.VISIBLE);
             int used = challenge.getMemberSkips() != null ? challenge.getMemberSkips().getOrDefault(currentUserId, 0) : 0;
-            binding.skipsText.setText(String.format(java.util.Locale.US, "Skips used: %d / %d", used, challenge.getMaxSkips()));
+            binding.skipsText.setText(getString(R.string.skips_used_format, used, challenge.getMaxSkips()));
             binding.skipButton.setEnabled(used < challenge.getMaxSkips());
         } else {
             binding.skipsLayout.setVisibility(View.GONE);

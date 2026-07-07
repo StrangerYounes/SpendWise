@@ -33,5 +33,6 @@ public class TaskWidgetProvider extends AppWidgetProvider {
         views.setEmptyView(R.id.widgetListView, R.id.emptyWidgetText);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widgetListView);
     }
 }

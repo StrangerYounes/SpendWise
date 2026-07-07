@@ -126,6 +126,37 @@ public class UserRepository {
         });
     }
 
+    public void deductTaskCompletion(String userId, ChallengeTask task, boolean wasLate, RepositoryCallback<Void> callback) {
+        getUserProfile(userId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                if (profile == null) {
+                    callback.onError("User profile not found");
+                    return;
+                }
+
+                // Deduct XP
+                long xpReward = XpUtil.getXpReward(task.getTaskType(), wasLate);
+                profile.setXp(Math.max(0, profile.getXp() - xpReward));
+                profile.setLevel(XpUtil.calculateLevel(profile.getXp()));
+
+                // Note: We don't deduct streaks because users might have completed other tasks
+                // but we could if this was the ONLY task completed today. 
+                // However, for simplicity and to prevent frustration, we'll keep the streak.
+
+                firestore.collection("users").document(userId)
+                        .set(profile)
+                        .addOnSuccessListener(unused -> callback.onSuccess(null))
+                        .addOnFailureListener(e -> callback.onError(e.getMessage()));
+            }
+
+            @Override
+            public void onError(String message) {
+                callback.onError(message);
+            }
+        });
+    }
+
     public void updateStreak(String userId, RepositoryCallback<Void> callback) {
         rewardTaskCompletion(userId, new ChallengeTask(), false, callback);
     }

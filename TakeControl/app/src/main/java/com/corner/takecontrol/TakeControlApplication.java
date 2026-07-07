@@ -1,12 +1,18 @@
 package com.corner.takecontrol;
 
 import android.app.Application;
+import android.content.Context;
 
 public class TakeControlApplication extends Application {
+    private static Context context;
+
     @Override
     public void onCreate() {
         super.onCreate();
-        // Firebase is automatically initialized by the google-services plugin,
-        // but we can place other global initializations here.
+        context = getApplicationContext();
+    }
+
+    public static Context getAppContext() {
+        return context;
     }
 }

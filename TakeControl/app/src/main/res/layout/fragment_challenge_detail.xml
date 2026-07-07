@@ -84,9 +84,9 @@
                     app:indicatorColor="@color/primary"
                     app:indicatorTrackGapSize="0dp"
                     app:trackColor="@color/primary_container"
-                    app:trackCornerRadius="4dp"
+                    app:trackCornerRadius="3dp"
                     app:trackStopIndicatorSize="0dp"
-                    app:trackThickness="8dp" />
+                    app:trackThickness="6dp" />
 
                 <TextView
                     android:id="@+id/membersText"
@@ -125,12 +125,11 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/skipButton"
-                        style="@style/Widget.Material3.Button.TextButton"
+                        style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Use Skip Day"
-                        android:textSize="12sp"
-                        android:textColor="@color/secondary" />
+                        android:text="@string/use_skip_day"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <TextView

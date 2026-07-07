@@ -6,6 +6,8 @@ import android.widget.RemoteViewsService;
 
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.ChallengeTask;
+import com.corner.takecontrol.data.repository.ChallengeRepository;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +16,7 @@ public class WidgetRemoteViewsFactory implements RemoteViewsService.RemoteViewsF
 
     private final Context context;
     private final List<ChallengeTask> tasks = new ArrayList<>();
+    private final ChallengeRepository repository = new ChallengeRepository();
 
     public WidgetRemoteViewsFactory(Context context) {
         this.context = context;
@@ -21,13 +24,25 @@ public class WidgetRemoteViewsFactory implements RemoteViewsService.RemoteViewsF
 
     @Override
     public void onCreate() {
-        // Initial data fetch could happen here but it's tricky with Firestore async
-        // For demonstration, we'll use empty list or mock if needed.
     }
 
     @Override
     public void onDataSetChanged() {
-        // This is called when notifyAppWidgetViewDataChanged is called
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            tasks.clear();
+            return;
+        }
+        
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        try {
+            List<ChallengeTask> todayTasks = repository.getTodayTasksSync(userId);
+            tasks.clear();
+            if (todayTasks != null) {
+                tasks.addAll(todayTasks);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

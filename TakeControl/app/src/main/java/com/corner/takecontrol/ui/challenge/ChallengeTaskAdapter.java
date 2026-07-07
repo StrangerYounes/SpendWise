@@ -93,7 +93,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
             boolean isSkipped = "SKIPPED".equals(status);
 
             if (isSkipped) {
-                holder.progressStatusText.setText("Day Skipped");
+                holder.progressStatusText.setText(R.string.day_skipped);
                 holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.text_secondary));
                 holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.surface_variant));
                 holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(R.color.outline));
