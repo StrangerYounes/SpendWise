@@ -113,6 +113,14 @@ public class ChallengeRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    public void updateTask(String challengeId, ChallengeTask task, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .collection(SUBCOLLECTION_TASKS).document(task.getId())
+                .set(task)
+                .addOnSuccessListener(unused -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void addTask(String challengeId, ChallengeTask task, RepositoryCallback<String> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_TASKS)

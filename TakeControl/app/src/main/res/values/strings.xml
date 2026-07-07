@@ -68,7 +68,11 @@
     <string name="add_value">Add progress</string>
     <string name="undo">Undo</string>
     <string name="edit">Edit</string>
-    <string name="log_message">The value you enter will be added to your current progress.</string>
+    <string name="log_message">Enter a positive value to add or a negative value to subtract from your progress.</string>
+    <string name="reset_progress">Reset progress</string>
+    <string name="confirm_reset_title">Reset Progress?</string>
+    <string name="confirm_reset_message">This will clear all progress for this task in the current period. This action cannot be undone.</string>
+    <string name="reset">Reset</string>
     <string name="enter_value">Enter value</string>
     <string name="leaderboard">Leaderboard</string>
     <string name="join_title">Join a challenge</string>
@@ -80,6 +84,13 @@
     <string name="tasks_for_period">Tasks for this period</string>
     <string name="tasks_section">Tasks</string>
     <string name="remove">Remove</string>
+    <string name="save">Save</string>
+    <string name="edit_task">Edit Task</string>
+    <string name="execution_time">Execution Time</string>
+    <string name="days_of_week">Days of Week</string>
+    <string name="status_late">Late</string>
+    <string name="status_normal">On Time</string>
+    <string name="task_completed_late">%1$s (%2$s)</string>
     <string name="edit_challenge">Edit Challenge</string>
     <string name="update_challenge">Update Challenge</string>
     <string name="loading">Loading…</string>

@@ -29,7 +29,7 @@
             android:id="@+id/logValueInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
+            android:inputType="numberDecimal|numberSigned"
             android:paddingVertical="16dp" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -40,5 +40,15 @@
         android:text="@string/log_message"
         android:textColor="@color/text_secondary"
         android:textSize="12sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/resetButton"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="16dp"
+        android:text="@string/reset_progress"
+        android:textColor="@color/error" />
 
 </LinearLayout>

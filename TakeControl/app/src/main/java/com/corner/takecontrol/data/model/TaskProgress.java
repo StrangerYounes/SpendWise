@@ -13,6 +13,7 @@ public class TaskProgress {
     private String periodKey;
     private double value;
     private boolean completed;
+    private String status;
 
     @ServerTimestamp
     private Timestamp updatedAt;
@@ -20,12 +21,13 @@ public class TaskProgress {
     public TaskProgress() {
     }
 
-    public TaskProgress(String userId, String taskId, String periodKey, double value, boolean completed) {
+    public TaskProgress(String userId, String taskId, String periodKey, double value, boolean completed, String status) {
         this.userId = userId;
         this.taskId = taskId;
         this.periodKey = periodKey;
         this.value = value;
         this.completed = completed;
+        this.status = status;
     }
 
     public String getId() {
@@ -74,6 +76,14 @@ public class TaskProgress {
 
     public void setCompleted(boolean completed) {
         this.completed = completed;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Timestamp getUpdatedAt() {

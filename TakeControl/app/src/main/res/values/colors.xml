@@ -26,7 +26,10 @@
 
     <color name="task_not_started_bg">#FFFFFF</color>
     <color name="task_partial_bg">#FFF8E1</color>
+    <color name="task_partial_track">#FFE082</color>
     <color name="task_completed_bg">#E8F5E9</color>
+    <color name="task_completed_late">#0E4D21</color>
+    <color name="task_completed_late_bg">#C8E6C9</color>
 
     <color name="outline">#74777F</color>
     <color name="white">#FFFFFF</color>

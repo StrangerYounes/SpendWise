@@ -54,6 +54,29 @@ public class CreateChallengeViewModel extends ViewModel {
         tasksUpdated.setValue(new ArrayList<>(pendingTasks));
     }
 
+    public void updatePendingTask(int index, ChallengeTask task) {
+        if (index >= 0 && index < pendingTasks.size()) {
+            ChallengeTask oldTask = pendingTasks.get(index);
+            task.setOrderIndex(oldTask.getOrderIndex());
+            task.setId(oldTask.getId());
+            pendingTasks.set(index, task);
+            tasksUpdated.setValue(new ArrayList<>(pendingTasks));
+        }
+    }
+
+    public void moveTask(int fromPosition, int toPosition) {
+        if (fromPosition < 0 || fromPosition >= pendingTasks.size() ||
+                toPosition < 0 || toPosition >= pendingTasks.size()) return;
+
+        ChallengeTask task = pendingTasks.remove(fromPosition);
+        pendingTasks.add(toPosition, task);
+
+        for (int i = 0; i < pendingTasks.size(); i++) {
+            pendingTasks.get(i).setOrderIndex(i);
+        }
+        tasksUpdated.setValue(new ArrayList<>(pendingTasks));
+    }
+
     public void removePendingTask(int index) {
         if (index >= 0 && index < pendingTasks.size()) {
             ChallengeTask removed = pendingTasks.remove(index);
@@ -182,9 +205,19 @@ public class CreateChallengeViewModel extends ViewModel {
         }
         ChallengeTask task = pendingTasks.get(index);
         
-        // If task already has an ID, we don't need to re-add it (optional: update it)
         if (task.getId() != null) {
-            saveTasksSequentially(index + 1);
+            challengeRepository.updateTask(currentChallengeId, task, new RepositoryCallback<>() {
+                @Override
+                public void onSuccess(Void result) {
+                    saveTasksSequentially(index + 1);
+                }
+
+                @Override
+                public void onError(String message) {
+                    loading.setValue(false);
+                    error.setValue(message);
+                }
+            });
             return;
         }
 

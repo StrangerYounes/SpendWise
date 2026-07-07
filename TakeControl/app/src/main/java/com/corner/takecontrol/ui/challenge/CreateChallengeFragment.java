@@ -12,7 +12,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.Challenge;
@@ -41,11 +43,18 @@ public class CreateChallengeFragment extends Fragment {
 
         taskAdapter = new PendingTaskAdapter(position -> {
             viewModel.removePendingTask(position);
+        }, (position, task) -> {
+            AddTaskDialogFragment dialog = AddTaskDialogFragment.newInstance(task, position);
+            dialog.setTaskUpdatedListener((pos, updatedTask) -> {
+                viewModel.updatePendingTask(pos, updatedTask);
+            });
+            dialog.show(getChildFragmentManager(), "EditTask");
         });
 
         binding.tasksRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.tasksRecyclerView.setAdapter(taskAdapter);
 
+        setupReordering();
         setupDurationChips();
 
         binding.addTaskButton.setOnClickListener(v -> {
@@ -119,13 +128,33 @@ public class CreateChallengeFragment extends Fragment {
         binding.durationChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
             int checkedId = checkedIds.get(0);
-            
+
             binding.customDurationLayout.setVisibility(checkedId == R.id.chipCustom ? View.VISIBLE : View.GONE);
-            
+
             if (checkedId == R.id.chip7) selectedDuration = 7;
             else if (checkedId == R.id.chip30) selectedDuration = 30;
             else if (checkedId == R.id.chip90) selectedDuration = 90;
         });
+    }
+
+    private void setupReordering() {
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                int fromPosition = viewHolder.getBindingAdapterPosition();
+                int toPosition = target.getBindingAdapterPosition();
+                viewModel.moveTask(fromPosition, toPosition);
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Not implemented
+            }
+        };
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(binding.tasksRecyclerView);
     }
 
     private int getSelectedDuration() {

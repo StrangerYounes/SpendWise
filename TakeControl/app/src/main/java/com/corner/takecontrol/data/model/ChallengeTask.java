@@ -2,6 +2,8 @@ package com.corner.takecontrol.data.model;
 
 import com.google.firebase.firestore.DocumentId;
 
+import java.util.List;
+
 public class ChallengeTask {
 
     @DocumentId
@@ -13,6 +15,8 @@ public class ChallengeTask {
     private double targetValue;
     private String unit;
     private int orderIndex;
+    private String executionTime;
+    private List<Integer> daysOfWeek;
 
     public ChallengeTask() {
     }
@@ -104,5 +108,21 @@ public class ChallengeTask {
 
     public void setOrderIndex(int orderIndex) {
         this.orderIndex = orderIndex;
+    }
+
+    public String getExecutionTime() {
+        return executionTime;
+    }
+
+    public void setExecutionTime(String executionTime) {
+        this.executionTime = executionTime;
+    }
+
+    public List<Integer> getDaysOfWeek() {
+        return daysOfWeek;
+    }
+
+    public void setDaysOfWeek(List<Integer> daysOfWeek) {
+        this.daysOfWeek = daysOfWeek;
     }
 }

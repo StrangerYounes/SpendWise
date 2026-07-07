@@ -57,6 +57,11 @@ public class ChallengeDetailFragment extends Fragment {
             public void onLogProgress(ChallengeTask task, TaskProgress progress, double value) {
                 viewModel.saveProgress(progress);
             }
+
+            @Override
+            public void onResetProgress(ChallengeTask task, TaskProgress progress) {
+                viewModel.saveProgress(progress);
+            }
         });
 
         leaderboardAdapter = new LeaderboardAdapter(
