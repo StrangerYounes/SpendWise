@@ -1,6 +1,7 @@
 package com.corner.takecontrol.util;
 
 import android.content.Context;
+import android.content.Intent;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -63,6 +64,11 @@ public class WidgetRemoteViewsFactory implements RemoteViewsService.RemoteViewsF
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.item_widget_task);
         views.setTextViewText(R.id.taskTitle, task.getTitle());
         views.setTextViewText(R.id.taskMeta, task.getExecutionTime() != null ? task.getExecutionTime() : "");
+        
+        // Fill-in intent for the template
+        Intent fillInIntent = new Intent();
+        fillInIntent.putExtra(TaskWidgetProvider.EXTRA_CHALLENGE_ID, task.getChallengeId());
+        views.setOnClickFillInIntent(R.id.widgetItemContainer, fillInIntent);
         
         return views;
     }

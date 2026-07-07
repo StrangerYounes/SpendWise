@@ -17,6 +17,7 @@ public class ChallengeTask {
     private int orderIndex;
     private String executionTime;
     private List<Integer> daysOfWeek;
+    private String challengeId;
 
     public ChallengeTask() {
     }
@@ -124,5 +125,13 @@ public class ChallengeTask {
 
     public void setDaysOfWeek(List<Integer> daysOfWeek) {
         this.daysOfWeek = daysOfWeek;
+    }
+
+    public String getChallengeId() {
+        return challengeId;
+    }
+
+    public void setChallengeId(String challengeId) {
+        this.challengeId = challengeId;
     }
 }

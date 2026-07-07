@@ -2,28 +2,57 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="8dp"
+    android:layout_margin="4dp"
     android:background="@drawable/bg_widget"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="8dp">
 
-    <TextView
-        android:id="@+id/widgetTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:text="Today's Tasks"
-        android:textColor="@color/primary"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <TextView
+            android:id="@+id/widgetTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Today's Tasks"
+            android:textColor="@color/primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widgetLastUpdated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/widgetRefreshButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Refresh"
+            android:padding="4dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_refresh" />
+    </LinearLayout>
 
     <ListView
         android:id="@+id/widgetListView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:clipToPadding="false"
         android:divider="@android:color/transparent"
-        android:dividerHeight="4dp" />
+        android:dividerHeight="4dp"
+        android:paddingTop="4dp" />
 
     <TextView
         android:id="@+id/emptyWidgetText"
@@ -31,6 +60,8 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:text="No tasks for today"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
         android:visibility="gone" />
 
 </LinearLayout>

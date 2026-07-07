@@ -86,6 +86,27 @@ public class MainActivity extends AppCompatActivity {
 
         requestNotificationPermission();
         startListeningToNotifications();
+        handleWidgetIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleWidgetIntent(intent);
+    }
+
+    private void handleWidgetIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("challengeId")) {
+            String challengeId = intent.getStringExtra("challengeId");
+            if (challengeId != null && navController != null) {
+                Bundle args = new Bundle();
+                args.putString("challengeId", challengeId);
+                
+                // Clear backstack to home and navigate to new detail
+                navController.popBackStack(R.id.homeFragment, false);
+                navController.navigate(R.id.challengeDetailFragment, args);
+            }
+        }
     }
 
     private void requestNotificationPermission() {

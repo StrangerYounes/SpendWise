@@ -253,6 +253,7 @@ public class ChallengeRepository {
                 ChallengeTask task = taskDoc.toObject(ChallengeTask.class);
                 if (task != null) {
                     task.setId(taskDoc.getId());
+                    task.setChallengeId(challengeDoc.getId());
 
                     // Filter by day of week if applicable
                     if (task.getDaysOfWeek() != null && !task.getDaysOfWeek().isEmpty()) {

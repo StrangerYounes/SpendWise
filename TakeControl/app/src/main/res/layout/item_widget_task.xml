@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetItemContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_status_badge"
-    android:backgroundTint="@color/surface"
+    android:layout_marginVertical="2dp"
+    android:background="@drawable/bg_completed_banner"
+    android:backgroundTint="#F8FAFB"
     android:orientation="vertical"
     android:padding="12dp">
 
@@ -11,6 +13,7 @@
         android:id="@+id/taskTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textAlignment="viewStart"
         android:textColor="@color/text_primary"
         android:textSize="14sp"
         android:textStyle="bold" />
@@ -20,6 +23,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:textColor="@color/text_secondary"
-        android:textSize="11sp" />
+        android:textAlignment="viewStart"
+        android:textColor="@color/primary"
+        android:textSize="11sp"
+        android:textStyle="bold" />
 </LinearLayout>
