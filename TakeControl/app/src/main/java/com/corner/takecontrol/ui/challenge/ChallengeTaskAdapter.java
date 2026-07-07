@@ -36,6 +36,8 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         void onLogProgress(ChallengeTask task, TaskProgress progress, double value);
 
         void onResetProgress(ChallengeTask task, TaskProgress progress);
+
+        void onStartTimer(ChallengeTask task, TaskProgress progress);
     }
 
     private final List<ChallengeTask> tasks = new ArrayList<>();
@@ -88,7 +90,14 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         if (complete) {
             String status = progress != null ? progress.getStatus() : null;
             boolean isLate = "LATE".equals(status);
-            if (isLate) {
+            boolean isSkipped = "SKIPPED".equals(status);
+
+            if (isSkipped) {
+                holder.progressStatusText.setText("Day Skipped");
+                holder.progressStatusText.setTextColor(holder.itemView.getContext().getColor(R.color.text_secondary));
+                holder.taskCard.setCardBackgroundColor(holder.itemView.getContext().getColor(R.color.surface_variant));
+                holder.taskCard.setStrokeColor(holder.itemView.getContext().getColor(R.color.outline));
+            } else if (isLate) {
                 holder.progressStatusText.setText(holder.itemView.getContext().getString(
                         R.string.task_completed_late,
                         holder.itemView.getContext().getString(R.string.task_completed_period),
@@ -127,6 +136,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
 
         holder.completeButton.setVisibility(View.GONE);
         holder.logButton.setVisibility(View.GONE);
+        holder.timerButton.setVisibility(View.GONE);
 
         if (!readOnly) {
             if (task.getTaskTypeEnum() == TaskType.CHECKMARK) {
@@ -153,6 +163,12 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
             } else {
                 holder.logButton.setVisibility(View.VISIBLE);
                 holder.logButton.setOnClickListener(v -> showLogDialog(holder.itemView, task, progress, periodKey));
+                
+                if (task.getTaskTypeEnum() == TaskType.DURATION && !complete) {
+                    holder.timerButton.setVisibility(View.VISIBLE);
+                    holder.timerButton.setOnClickListener(v -> listener.onStartTimer(task, 
+                            progress != null ? progress : new TaskProgress(getUserId(), task.getId(), periodKey, 0, false, "NORMAL")));
+                }
             }
         }
     }
@@ -291,6 +307,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         final LinearProgressIndicator taskProgressBar;
         final View completeButton;
         final View logButton;
+        final View timerButton;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -301,6 +318,7 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
             taskProgressBar = itemView.findViewById(R.id.taskProgressBar);
             completeButton = itemView.findViewById(R.id.completeButton);
             logButton = itemView.findViewById(R.id.logButton);
+            timerButton = itemView.findViewById(R.id.timerButton);
         }
     }
 }

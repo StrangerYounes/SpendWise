@@ -62,5 +62,17 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/nudgeButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="12dp"
+            android:text="@string/nudge"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:cornerRadius="16dp" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -21,6 +21,8 @@ import com.corner.takecontrol.data.model.ChallengeStatus;
 import com.corner.takecontrol.data.model.ChallengeTask;
 import com.corner.takecontrol.data.model.TaskProgress;
 import com.corner.takecontrol.databinding.FragmentChallengeDetailBinding;
+import com.corner.takecontrol.ui.challenge.FocusTimerDialogFragment;
+import com.corner.takecontrol.util.ReminderManager;
 import com.corner.takecontrol.util.ChallengeUiUtil;
 
 import java.util.List;
@@ -62,12 +64,30 @@ public class ChallengeDetailFragment extends Fragment {
             public void onResetProgress(ChallengeTask task, TaskProgress progress) {
                 viewModel.saveProgress(progress);
             }
+
+            @Override
+            public void onStartTimer(ChallengeTask task, TaskProgress progress) {
+                FocusTimerDialogFragment dialog = FocusTimerDialogFragment.newInstance(task, progress);
+                dialog.setOnTimerFinishedListener((t, p, minutes) -> {
+                    double currentVal = p.getValue();
+                    double newValue = currentVal + minutes;
+                    p.setValue(newValue);
+                    p.setCompleted(newValue >= t.getTargetValue());
+                    viewModel.saveProgress(p);
+                    Toast.makeText(requireContext(), "Focus session finished!", Toast.LENGTH_SHORT).show();
+                });
+                dialog.show(getChildFragmentManager(), "FocusTimer");
+            }
         });
 
         leaderboardAdapter = new LeaderboardAdapter(
                 com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
                         ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid()
-                        : "");
+                        : "",
+                entry -> {
+                    viewModel.nudgeMember(entry.getUserId(), entry.getDisplayName());
+                    Toast.makeText(requireContext(), "Nudge sent!", Toast.LENGTH_SHORT).show();
+                });
 
         binding.tasksRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.tasksRecyclerView.setAdapter(taskAdapter);
@@ -76,6 +96,14 @@ public class ChallengeDetailFragment extends Fragment {
 
         binding.startButton.setOnClickListener(v -> viewModel.startChallenge());
         binding.shareButton.setOnClickListener(v -> viewModel.shareChallenge());
+        binding.skipButton.setOnClickListener(v -> {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Use Skip Day?")
+                    .setMessage("This will mark all tasks for today as skipped. You won't break your streak.")
+                    .setPositiveButton("Use Skip", (d, w) -> viewModel.useSkipDay())
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
         binding.editButton.setOnClickListener(v -> {
             Bundle args = new Bundle();
             args.putString("challengeId", challengeId);
@@ -138,6 +166,15 @@ public class ChallengeDetailFragment extends Fragment {
                 ? View.VISIBLE : View.GONE);
         binding.editButton.setVisibility(isCreator && status != ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
 
+        if (status == ChallengeStatus.ACTIVE && challenge.getMaxSkips() > 0) {
+            binding.skipsLayout.setVisibility(View.VISIBLE);
+            int used = challenge.getMemberSkips() != null ? challenge.getMemberSkips().getOrDefault(currentUserId, 0) : 0;
+            binding.skipsText.setText(String.format(java.util.Locale.US, "Skips used: %d / %d", used, challenge.getMaxSkips()));
+            binding.skipButton.setEnabled(used < challenge.getMaxSkips());
+        } else {
+            binding.skipsLayout.setVisibility(View.GONE);
+        }
+
         updateTasks();
     }
 
@@ -147,6 +184,10 @@ public class ChallengeDetailFragment extends Fragment {
         List<TaskProgress> progress = viewModel.getProgressList().getValue();
         boolean readOnly = challenge == null || challenge.getStatusEnum() != ChallengeStatus.ACTIVE;
         taskAdapter.submitData(tasks, progress, readOnly);
+
+        if (!readOnly && tasks != null) {
+            ReminderManager.scheduleReminders(requireContext(), tasks);
+        }
     }
 
     private void renderLeaderboard(List<com.corner.takecontrol.data.model.LeaderboardEntry> entries) {

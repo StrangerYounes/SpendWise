@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.corner.takecontrol.data.model.AppNotification;
 import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.data.model.ChallengeStatus;
 import com.corner.takecontrol.data.model.ChallengeTask;
@@ -201,6 +202,19 @@ public class ChallengeDetailViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 actionComplete.setValue(true);
+                if (progress.isCompleted() && FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    ChallengeTask task = findTaskById(progress.getTaskId());
+                    if (task != null) {
+                        boolean isLate = "LATE".equals(progress.getStatus());
+                        userRepository.rewardTaskCompletion(userId, task, isLate, new RepositoryCallback<>() {
+                            @Override
+                            public void onSuccess(Void result) {}
+                            @Override
+                            public void onError(String message) {}
+                        });
+                    }
+                }
             }
 
             @Override
@@ -208,6 +222,18 @@ public class ChallengeDetailViewModel extends ViewModel {
                 error.setValue(message);
             }
         });
+    }
+
+    private ChallengeTask findTaskById(String taskId) {
+        List<ChallengeTask> currentTasks = tasks.getValue();
+        if (currentTasks != null) {
+            for (ChallengeTask task : currentTasks) {
+                if (task.getId().equals(taskId)) {
+                    return task;
+                }
+            }
+        }
+        return null;
     }
 
     public void shareChallenge() {
@@ -225,6 +251,80 @@ public class ChallengeDetailViewModel extends ViewModel {
                 shareCode.setValue(result);
             }
 
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+            }
+        });
+    }
+
+    public void nudgeMember(String toUserId, String toUserName) {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String fromUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        userRepository.getUserProfile(fromUserId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(UserProfile fromProfile) {
+                String fromName = fromProfile != null ? fromProfile.getDisplayName() : "Someone";
+                String message = String.format(java.util.Locale.US, "%s nudged you!", fromName);
+                AppNotification notification = new AppNotification(toUserId, fromUserId, fromName, "NUDGE", message);
+
+                userRepository.sendNotification(toUserId, notification, new RepositoryCallback<>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                    }
+                    @Override
+                    public void onError(String message) {
+                        error.setValue(message);
+                    }
+                });
+            }
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+            }
+        });
+    }
+
+    public void useSkipDay() {
+        Challenge current = challenge.getValue();
+        if (current == null || challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) {
+            return;
+        }
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        
+        int skipsUsed = current.getMemberSkips() != null ? current.getMemberSkips().getOrDefault(userId, 0) : 0;
+        if (skipsUsed >= current.getMaxSkips()) {
+            error.setValue("No skips remaining");
+            return;
+        }
+
+        // Mark ALL tasks for today as skipped (completed with a special status)
+        List<ChallengeTask> currentTasks = tasks.getValue();
+        if (currentTasks == null) return;
+
+        for (ChallengeTask task : currentTasks) {
+            String periodKey = com.corner.takecontrol.util.PeriodKeyUtil.getCurrentPeriodKey(task.getFrequencyEnum());
+            TaskProgress p = new TaskProgress(userId, task.getId(), periodKey, task.getTargetValue(), true, "SKIPPED");
+            challengeRepository.saveProgress(challengeId, p, new RepositoryCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {}
+                @Override
+                public void onError(String message) {}
+            });
+        }
+
+        // Increment skip count
+        java.util.Map<String, Integer> skipsMap = current.getMemberSkips();
+        if (skipsMap == null) skipsMap = new java.util.HashMap<>();
+        skipsMap.put(userId, skipsUsed + 1);
+        current.setMemberSkips(skipsMap);
+
+        challengeRepository.updateChallenge(challengeId, current, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                actionComplete.setValue(true);
+            }
             @Override
             public void onError(String message) {
                 error.setValue(message);

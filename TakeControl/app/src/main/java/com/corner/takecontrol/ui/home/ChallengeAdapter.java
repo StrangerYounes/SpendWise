@@ -11,7 +11,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.Challenge;
+import com.corner.takecontrol.data.model.UserProfile;
 import com.corner.takecontrol.util.ChallengeUiUtil;
+import com.corner.takecontrol.util.XpUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,8 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private final List<Challenge> challenges = new ArrayList<>();
     private final OnChallengeClickListener listener;
     private String greetingName;
+    private int currentStreak;
+    private UserProfile userProfile;
 
     public ChallengeAdapter(OnChallengeClickListener listener) {
         this.listener = listener;
@@ -35,6 +39,20 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     public void setGreetingName(String name) {
         this.greetingName = name;
+        if (!challenges.isEmpty()) {
+            notifyItemChanged(0);
+        }
+    }
+
+    public void setStreak(int streak) {
+        this.currentStreak = streak;
+        if (!challenges.isEmpty()) {
+            notifyItemChanged(0);
+        }
+    }
+
+    public void setUserProfile(UserProfile profile) {
+        this.userProfile = profile;
         if (!challenges.isEmpty()) {
             notifyItemChanged(0);
         }
@@ -76,6 +94,31 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             } else {
                 header.greetingText.setText(R.string.home_greeting_default);
             }
+
+            if (currentStreak > 0) {
+                header.streakLayout.setVisibility(View.VISIBLE);
+                header.streakText.setText(String.valueOf(currentStreak));
+            } else {
+                header.streakLayout.setVisibility(View.GONE);
+            }
+
+            if (userProfile != null) {
+                header.levelLayout.setVisibility(View.VISIBLE);
+                header.levelText.setText("Lvl " + userProfile.getLevel());
+                
+                long currentXp = userProfile.getXp();
+                long levelXpStart = XpUtil.getXpForLevel(userProfile.getLevel());
+                long nextLevelXpStart = XpUtil.getXpForLevel(userProfile.getLevel() + 1);
+                
+                long progressXp = currentXp - levelXpStart;
+                long totalXpNeeded = nextLevelXpStart - levelXpStart;
+                
+                int percent = totalXpNeeded > 0 ? (int) (progressXp * 100 / totalXpNeeded) : 0;
+                header.levelProgressBar.setProgress(percent);
+                header.xpText.setText(currentXp + " XP");
+            } else {
+                header.levelLayout.setVisibility(View.GONE);
+            }
             return;
         }
 
@@ -116,10 +159,22 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     static class HeaderViewHolder extends RecyclerView.ViewHolder {
         final TextView greetingText;
+        final View streakLayout;
+        final TextView streakText;
+        final View levelLayout;
+        final TextView levelText;
+        final com.google.android.material.progressindicator.LinearProgressIndicator levelProgressBar;
+        final TextView xpText;
 
         HeaderViewHolder(@NonNull View itemView) {
             super(itemView);
             greetingText = itemView.findViewById(R.id.greetingText);
+            streakLayout = itemView.findViewById(R.id.streakLayout);
+            streakText = itemView.findViewById(R.id.streakText);
+            levelLayout = itemView.findViewById(R.id.levelLayout);
+            levelText = itemView.findViewById(R.id.levelText);
+            levelProgressBar = itemView.findViewById(R.id.levelProgressBar);
+            xpText = itemView.findViewById(R.id.xpText);
         }
     }
 

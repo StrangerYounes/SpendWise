@@ -6,15 +6,96 @@
     android:orientation="vertical"
     android:paddingBottom="8dp">
 
-    <TextView
-        android:id="@+id/greetingText"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:textColor="@color/text_primary"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:letterSpacing="-0.02" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/greetingText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingTop="8dp"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:letterSpacing="-0.02" />
+
+        <LinearLayout
+            android:id="@+id/streakLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_status_badge"
+            android:backgroundTint="#FFF3E0"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/streakIcon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_streak"
+                app:tint="#FF5722" />
+
+            <TextView
+                android:id="@+id/streakText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="#E64A19"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/levelLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/levelText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_rank_badge"
+            android:backgroundTint="@color/primary"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/levelProgressBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            app:indicatorColor="@color/primary"
+            app:indicatorTrackGapSize="0dp"
+            app:trackColor="@color/primary_container"
+            app:trackCornerRadius="4dp"
+            app:trackStopIndicatorSize="0dp"
+            app:trackThickness="8dp" />
+
+        <TextView
+            android:id="@+id/xpText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/subtitleText"

@@ -31,13 +31,14 @@ public class ChallengeRepository {
         firestore = FirebaseFirestore.getInstance();
     }
 
-    public void createChallenge(String userId, String title, String description, int durationDays,
+    public void createChallenge(String userId, String title, String description, int durationDays, int maxSkips,
                                 RepositoryCallback<String> callback) {
         Challenge challenge = new Challenge();
         challenge.setTitle(title);
         challenge.setDescription(description);
         challenge.setCreatedBy(userId);
         challenge.setDurationDays(durationDays);
+        challenge.setMaxSkips(maxSkips);
         challenge.setStatusEnum(ChallengeStatus.DRAFT);
         List<String> members = new ArrayList<>();
         members.add(userId);

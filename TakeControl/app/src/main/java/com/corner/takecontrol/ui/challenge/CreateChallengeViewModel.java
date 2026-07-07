@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModel;
 
 import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.data.model.ChallengeTask;
+import com.corner.takecontrol.data.model.ChallengeTemplate;
 import com.corner.takecontrol.data.repository.ChallengeRepository;
 import com.corner.takecontrol.data.repository.RepositoryCallback;
+import com.corner.takecontrol.data.repository.TemplateRepository;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -115,6 +117,25 @@ public class CreateChallengeViewModel extends ViewModel {
         });
     }
 
+    public void loadTemplate(String templateId) {
+        TemplateRepository repository = new TemplateRepository();
+        List<ChallengeTemplate> templates = repository.getTemplates();
+        for (ChallengeTemplate template : templates) {
+            if (template.getId().equals(templateId)) {
+                Challenge c = new Challenge();
+                c.setTitle(template.getTitle());
+                c.setDescription(template.getDescription());
+                c.setDurationDays(template.getDurationDays());
+                challengeToEdit.setValue(c);
+
+                pendingTasks.clear();
+                pendingTasks.addAll(template.getTasks());
+                tasksUpdated.setValue(new ArrayList<>(pendingTasks));
+                return;
+            }
+        }
+    }
+
     private void loadTasks(String id) {
         challengeRepository.getTasks(id, new RepositoryCallback<>() {
             @Override
@@ -133,7 +154,7 @@ public class CreateChallengeViewModel extends ViewModel {
         });
     }
 
-    public void createChallenge(String title, String description, int durationDays) {
+    public void createChallenge(String title, String description, int durationDays, int maxSkips) {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             error.setValue("You must be signed in");
             return;
@@ -148,14 +169,14 @@ public class CreateChallengeViewModel extends ViewModel {
         }
 
         if (currentChallengeId != null) {
-            updateChallenge(title, description, durationDays);
+            updateChallenge(title, description, durationDays, maxSkips);
             return;
         }
 
         loading.setValue(true);
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         challengeRepository.createChallenge(userId, title.trim(), description != null ? description.trim() : "",
-                durationDays, new RepositoryCallback<>() {
+                durationDays, maxSkips, new RepositoryCallback<>() {
                     @Override
                     public void onSuccess(String challengeId) {
                         currentChallengeId = challengeId;
@@ -170,7 +191,7 @@ public class CreateChallengeViewModel extends ViewModel {
                 });
     }
 
-    private void updateChallenge(String title, String description, int durationDays) {
+    private void updateChallenge(String title, String description, int durationDays, int maxSkips) {
         loading.setValue(true);
         Challenge challenge = challengeToEdit.getValue();
         if (challenge == null) {
@@ -182,6 +203,7 @@ public class CreateChallengeViewModel extends ViewModel {
         challenge.setTitle(title.trim());
         challenge.setDescription(description != null ? description.trim() : "");
         challenge.setDurationDays(durationDays);
+        challenge.setMaxSkips(maxSkips);
 
         challengeRepository.updateChallenge(currentChallengeId, challenge, new RepositoryCallback<>() {
             @Override

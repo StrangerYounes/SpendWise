@@ -69,8 +69,16 @@ public class CreateChallengeFragment extends Fragment {
             String title = binding.titleInput.getText() != null ? binding.titleInput.getText().toString().trim() : "";
             String description = binding.descriptionInput.getText() != null ? binding.descriptionInput.getText().toString().trim() : "";
             int duration = getSelectedDuration();
+            
+            int maxSkips = 0;
+            String skipsStr = binding.maxSkipsInput.getText() != null ? binding.maxSkipsInput.getText().toString() : "";
+            if (!skipsStr.isEmpty()) {
+                try {
+                    maxSkips = Integer.parseInt(skipsStr);
+                } catch (NumberFormatException ignored) {}
+            }
 
-            viewModel.createChallenge(title, description, duration);
+            viewModel.createChallenge(title, description, duration, maxSkips);
         });
 
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
@@ -106,11 +114,17 @@ public class CreateChallengeFragment extends Fragment {
             binding.saveChallengeButton.setText(R.string.update_challenge);
             viewModel.loadChallenge(challengeId);
         }
+
+        String templateId = getArguments() != null ? getArguments().getString("templateId") : null;
+        if (templateId != null) {
+            viewModel.loadTemplate(templateId);
+        }
     }
 
     private void renderChallenge(Challenge challenge) {
         binding.titleInput.setText(challenge.getTitle());
         binding.descriptionInput.setText(challenge.getDescription());
+        binding.maxSkipsInput.setText(String.valueOf(challenge.getMaxSkips()));
         
         int duration = challenge.getDurationDays();
         if (duration == 7) binding.chip7.setChecked(true);

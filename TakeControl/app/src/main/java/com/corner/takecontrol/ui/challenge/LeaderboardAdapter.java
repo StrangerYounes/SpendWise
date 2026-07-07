@@ -19,11 +19,17 @@ import java.util.List;
 
 public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.ViewHolder> {
 
+    public interface OnNudgeListener {
+        void onNudge(LeaderboardEntry entry);
+    }
+
     private final List<LeaderboardEntry> entries = new ArrayList<>();
     private final String currentUserId;
+    private final OnNudgeListener nudgeListener;
 
-    public LeaderboardAdapter(String currentUserId) {
+    public LeaderboardAdapter(String currentUserId, OnNudgeListener nudgeListener) {
         this.currentUserId = currentUserId;
+        this.nudgeListener = nudgeListener;
     }
 
     public void submitList(List<LeaderboardEntry> list) {
@@ -77,6 +83,13 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         holder.percentText.setText(holder.itemView.getContext()
                 .getString(R.string.progress_percent, entry.getCompletionPercent()));
         holder.progressBar.setProgress(entry.getCompletionPercent());
+
+        if (!isCurrentUser && entry.getCompletionPercent() < 100) {
+            holder.nudgeButton.setVisibility(View.VISIBLE);
+            holder.nudgeButton.setOnClickListener(v -> nudgeListener.onNudge(entry));
+        } else {
+            holder.nudgeButton.setVisibility(View.GONE);
+        }
     }
 
     private int getRankColorRes(int rank) {
@@ -103,6 +116,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         final TextView nameText;
         final TextView percentText;
         final LinearProgressIndicator progressBar;
+        final View nudgeButton;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -111,6 +125,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
             nameText = itemView.findViewById(R.id.nameText);
             percentText = itemView.findViewById(R.id.percentText);
             progressBar = itemView.findViewById(R.id.progressBar);
+            nudgeButton = itemView.findViewById(R.id.nudgeButton);
         }
     }
 }

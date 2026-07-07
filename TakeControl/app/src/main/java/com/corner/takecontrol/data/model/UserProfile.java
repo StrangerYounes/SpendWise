@@ -4,12 +4,21 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.ServerTimestamp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class UserProfile {
 
     @DocumentId
     private String id;
     private String displayName;
     private String photoUrl;
+    private int currentStreak;
+    private int longestStreak;
+    private String lastCompletionDate; // YYYY-MM-DD
+    private long xp;
+    private int level;
+    private List<String> achievements = new ArrayList<>();
 
     @ServerTimestamp
     private Timestamp createdAt;
@@ -44,6 +53,54 @@ public class UserProfile {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    public int getCurrentStreak() {
+        return currentStreak;
+    }
+
+    public void setCurrentStreak(int currentStreak) {
+        this.currentStreak = currentStreak;
+    }
+
+    public int getLongestStreak() {
+        return longestStreak;
+    }
+
+    public void setLongestStreak(int longestStreak) {
+        this.longestStreak = longestStreak;
+    }
+
+    public String getLastCompletionDate() {
+        return lastCompletionDate;
+    }
+
+    public void setLastCompletionDate(String lastCompletionDate) {
+        this.lastCompletionDate = lastCompletionDate;
+    }
+
+    public long getXp() {
+        return xp;
+    }
+
+    public void setXp(long xp) {
+        this.xp = xp;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public List<String> getAchievements() {
+        return achievements;
+    }
+
+    public void setAchievements(List<String> achievements) {
+        this.achievements = achievements;
     }
 
     public Timestamp getCreatedAt() {

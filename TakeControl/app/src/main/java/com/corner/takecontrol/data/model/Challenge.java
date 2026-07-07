@@ -20,6 +20,8 @@ public class Challenge {
     private String status;
     private String shareCode;
     private List<String> memberIds = new ArrayList<>();
+    private int maxSkips;
+    private java.util.Map<String, Integer> memberSkips = new java.util.HashMap<>();
 
     @ServerTimestamp
     private Timestamp createdAt;
@@ -113,6 +115,22 @@ public class Challenge {
 
     public void setMemberIds(List<String> memberIds) {
         this.memberIds = memberIds;
+    }
+
+    public int getMaxSkips() {
+        return maxSkips;
+    }
+
+    public void setMaxSkips(int maxSkips) {
+        this.maxSkips = maxSkips;
+    }
+
+    public java.util.Map<String, Integer> getMemberSkips() {
+        return memberSkips;
+    }
+
+    public void setMemberSkips(java.util.Map<String, Integer> memberSkips) {
+        this.memberSkips = memberSkips;
     }
 
     public Timestamp getCreatedAt() {

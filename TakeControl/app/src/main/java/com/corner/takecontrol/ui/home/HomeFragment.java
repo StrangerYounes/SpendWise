@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.databinding.FragmentHomeBinding;
+import com.corner.takecontrol.ui.challenge.TemplatesDialogFragment;
 
 import java.util.List;
 
@@ -48,10 +49,30 @@ public class HomeFragment extends Fragment {
         binding.joinFab.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.action_home_to_join));
 
+        binding.templatesFab.setOnClickListener(v -> {
+            TemplatesDialogFragment dialog = new TemplatesDialogFragment();
+            dialog.setOnTemplateSelectedListener(template -> {
+                Bundle args = new Bundle();
+                args.putString("templateId", template.getId());
+                Navigation.findNavController(requireView()).navigate(R.id.action_home_to_create, args);
+            });
+            dialog.show(getChildFragmentManager(), "Templates");
+        });
+
         viewModel.getChallenges().observe(getViewLifecycleOwner(), this::renderChallenges);
         viewModel.getDisplayName().observe(getViewLifecycleOwner(), name -> {
             if (name != null) {
                 adapter.setGreetingName(name);
+            }
+        });
+        viewModel.getCurrentStreak().observe(getViewLifecycleOwner(), streak -> {
+            if (streak != null) {
+                adapter.setStreak(streak);
+            }
+        });
+        viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
+            if (profile != null) {
+                adapter.setUserProfile(profile);
             }
         });
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {

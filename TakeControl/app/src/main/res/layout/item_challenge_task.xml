@@ -73,6 +73,17 @@
             app:cornerRadius="20dp" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/timerButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="16dp"
+            android:text="@string/timer"
+            android:visibility="gone"
+            app:cornerRadius="20dp" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/completeButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
