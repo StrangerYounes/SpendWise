@@ -69,19 +69,6 @@ public class MainActivity extends AppCompatActivity {
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             toolbar.getMenu().clear();
-            if (destination.getId() == R.id.homeFragment) {
-                toolbar.inflateMenu(R.menu.menu_home);
-                toolbar.setOnMenuItemClickListener(item -> {
-                    if (item.getItemId() == R.id.action_sign_out) {
-                        authRepository.signOut();
-                        controller.navigate(R.id.loginFragment);
-                        return true;
-                    }
-                    return false;
-                });
-            } else {
-                toolbar.setOnMenuItemClickListener(null);
-            }
         });
 
         requestNotificationPermission();

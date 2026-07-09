@@ -20,6 +20,7 @@ public class Challenge {
     private String status;
     private String shareCode;
     private List<String> memberIds = new ArrayList<>();
+    private List<String> archivedMemberIds = new ArrayList<>();
     private int maxSkips;
     private java.util.Map<String, Integer> memberSkips = new java.util.HashMap<>();
 
@@ -115,6 +116,14 @@ public class Challenge {
 
     public void setMemberIds(List<String> memberIds) {
         this.memberIds = memberIds;
+    }
+
+    public List<String> getArchivedMemberIds() {
+        return archivedMemberIds;
+    }
+
+    public void setArchivedMemberIds(List<String> archivedMemberIds) {
+        this.archivedMemberIds = archivedMemberIds;
     }
 
     public int getMaxSkips() {

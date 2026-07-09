@@ -148,16 +148,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/editButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/edit_challenge"
-            app:cornerRadius="12dp"
-            android:visibility="gone" />
-
         <LinearLayout
             android:id="@+id/draftActionsLayout"
             android:layout_width="match_parent"
@@ -171,23 +161,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/start_challenge"
-                app:cornerRadius="12dp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/socialActionsLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/shareButton"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/invite_friends"
                 app:cornerRadius="12dp" />
         </LinearLayout>
 

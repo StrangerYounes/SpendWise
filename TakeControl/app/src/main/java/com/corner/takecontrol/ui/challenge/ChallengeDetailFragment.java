@@ -95,7 +95,6 @@ public class ChallengeDetailFragment extends Fragment {
         binding.leaderboardRecyclerView.setAdapter(leaderboardAdapter);
 
         binding.startButton.setOnClickListener(v -> viewModel.startChallenge());
-        binding.shareButton.setOnClickListener(v -> viewModel.shareChallenge());
         binding.skipButton.setOnClickListener(v -> {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.skip_day_title)
@@ -104,13 +103,11 @@ public class ChallengeDetailFragment extends Fragment {
                     .setNegativeButton(R.string.cancel, null)
                     .show();
         });
-        binding.editButton.setOnClickListener(v -> {
-            Bundle args = new Bundle();
-            args.putString("challengeId", challengeId);
-            androidx.navigation.Navigation.findNavController(v).navigate(R.id.action_detail_to_edit, args);
-        });
 
-        viewModel.getChallenge().observe(getViewLifecycleOwner(), this::renderChallenge);
+        viewModel.getChallenge().observe(getViewLifecycleOwner(), challenge -> {
+            renderChallenge(challenge);
+            setupMenu(challenge);
+        });
         viewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> updateTasks());
         viewModel.getProgressList().observe(getViewLifecycleOwner(), progress -> updateTasks());
         viewModel.getCompletionPercent().observe(getViewLifecycleOwner(), percent -> {
@@ -128,6 +125,11 @@ public class ChallengeDetailFragment extends Fragment {
         viewModel.getShareCode().observe(getViewLifecycleOwner(), code -> {
             if (code != null) {
                 copyShareCode(code);
+            }
+        });
+        viewModel.getChallengeDeleted().observe(getViewLifecycleOwner(), deleted -> {
+            if (Boolean.TRUE.equals(deleted)) {
+                androidx.navigation.Navigation.findNavController(requireView()).navigateUp();
             }
         });
 
@@ -162,9 +164,6 @@ public class ChallengeDetailFragment extends Fragment {
 
         binding.completedBanner.setVisibility(status == ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
         binding.draftActionsLayout.setVisibility(status == ChallengeStatus.DRAFT ? View.VISIBLE : View.GONE);
-        binding.socialActionsLayout.setVisibility(status == ChallengeStatus.ACTIVE || status == ChallengeStatus.COMPLETED
-                ? View.VISIBLE : View.GONE);
-        binding.editButton.setVisibility(isCreator && status != ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
 
         if (status == ChallengeStatus.ACTIVE && challenge.getMaxSkips() > 0) {
             binding.skipsLayout.setVisibility(View.VISIBLE);
@@ -176,6 +175,65 @@ public class ChallengeDetailFragment extends Fragment {
         }
 
         updateTasks();
+    }
+
+    private void setupMenu(Challenge challenge) {
+        if (challenge == null) return;
+        com.google.android.material.appbar.MaterialToolbar toolbar = requireActivity().findViewById(R.id.toolbar);
+        if (toolbar == null) return;
+
+        toolbar.getMenu().clear();
+        toolbar.inflateMenu(R.menu.menu_challenge_detail);
+
+        String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
+                ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
+        boolean isCreator = currentUserId.equals(challenge.getCreatedBy());
+        ChallengeStatus status = challenge.getStatusEnum();
+        boolean isArchived = challenge.getArchivedMemberIds() != null && challenge.getArchivedMemberIds().contains(currentUserId);
+
+        toolbar.getMenu().findItem(R.id.action_edit).setVisible(isCreator && status != ChallengeStatus.COMPLETED);
+        toolbar.getMenu().findItem(R.id.action_share).setVisible(status == ChallengeStatus.ACTIVE || status == ChallengeStatus.COMPLETED);
+        toolbar.getMenu().findItem(R.id.action_delete).setVisible(isCreator);
+        toolbar.getMenu().findItem(R.id.action_leave).setVisible(!isCreator);
+        toolbar.getMenu().findItem(R.id.action_archive).setVisible(status == ChallengeStatus.COMPLETED && !isArchived);
+
+        toolbar.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_edit) {
+                Bundle args = new Bundle();
+                args.putString("challengeId", challenge.getId());
+                androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.action_detail_to_edit, args);
+                return true;
+            } else if (id == R.id.action_share) {
+                viewModel.shareChallenge();
+                return true;
+            } else if (id == R.id.action_delete) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.delete_challenge)
+                        .setMessage(R.string.delete_challenge_message)
+                        .setPositiveButton(R.string.delete_challenge, (d, w) -> viewModel.deleteChallenge())
+                        .setNegativeButton(R.string.cancel, null)
+                        .show();
+                return true;
+            } else if (id == R.id.action_leave) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.leave_challenge)
+                        .setMessage(R.string.leave_challenge_message)
+                        .setPositiveButton(R.string.leave_challenge, (d, w) -> viewModel.leaveChallenge())
+                        .setNegativeButton(R.string.cancel, null)
+                        .show();
+                return true;
+            } else if (id == R.id.action_archive) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.archive_challenge)
+                        .setMessage(R.string.archive_challenge_message)
+                        .setPositiveButton(R.string.archive_challenge, (d, w) -> viewModel.archiveChallenge())
+                        .setNegativeButton(R.string.cancel, null)
+                        .show();
+                return true;
+            }
+            return false;
+        });
     }
 
     private void updateTasks() {

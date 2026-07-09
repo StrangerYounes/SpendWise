@@ -24,6 +24,7 @@ public class HomeViewModel extends ViewModel {
     private final MutableLiveData<String> displayName = new MutableLiveData<>();
     private final MutableLiveData<Integer> currentStreak = new MutableLiveData<>(0);
     private final MutableLiveData<UserProfile> userProfile = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> showArchived = new MutableLiveData<>(false);
     private ListenerRegistration challengesListener;
     private ListenerRegistration userListener;
 
@@ -54,6 +55,15 @@ public class HomeViewModel extends ViewModel {
 
     public LiveData<UserProfile> getUserProfile() {
         return userProfile;
+    }
+
+    public LiveData<Boolean> getShowArchived() {
+        return showArchived;
+    }
+
+    public void toggleShowArchived() {
+        showArchived.setValue(Boolean.FALSE.equals(showArchived.getValue()));
+        startListening();
     }
 
     public void startListening() {
@@ -100,7 +110,8 @@ public class HomeViewModel extends ViewModel {
             challengesListener.remove();
         }
         loading.setValue(true);
-        challengesListener = challengeRepository.listenToMyChallenges(userId, new RepositoryCallback<>() {
+        boolean archived = Boolean.TRUE.equals(showArchived.getValue());
+        challengesListener = challengeRepository.listenToMyChallenges(userId, archived, new RepositoryCallback<>() {
             @Override
             public void onSuccess(List<Challenge> result) {
                 loading.setValue(false);

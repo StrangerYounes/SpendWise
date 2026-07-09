@@ -39,6 +39,8 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
+        setupMenu();
+
         adapter = new ChallengeAdapter(this::openChallenge);
         binding.challengesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.challengesRecyclerView.setAdapter(adapter);
@@ -75,6 +77,11 @@ public class HomeFragment extends Fragment {
                 adapter.setUserProfile(profile);
             }
         });
+
+        viewModel.getShowArchived().observe(getViewLifecycleOwner(), showingArchived -> {
+            setupMenu();
+        });
+
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
             binding.progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE);
         });
@@ -82,6 +89,32 @@ public class HomeFragment extends Fragment {
             if (error != null) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
             }
+        });
+    }
+
+    private void setupMenu() {
+        com.google.android.material.appbar.MaterialToolbar toolbar = requireActivity().findViewById(R.id.toolbar);
+        if (toolbar == null) return;
+
+        toolbar.getMenu().clear();
+        toolbar.inflateMenu(R.menu.menu_home);
+        
+        android.view.MenuItem toggleItem = toolbar.getMenu().findItem(R.id.action_toggle_archived);
+        if (toggleItem != null) {
+            boolean showingArchived = Boolean.TRUE.equals(viewModel.getShowArchived().getValue());
+            toggleItem.setTitle(showingArchived ? R.string.show_active : R.string.show_archived);
+        }
+
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_toggle_archived) {
+                viewModel.toggleShowArchived();
+                return true;
+            } else if (item.getItemId() == R.id.action_sign_out) {
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                Navigation.findNavController(requireView()).navigate(R.id.loginFragment);
+                return true;
+            }
+            return false;
         });
     }
 
@@ -96,6 +129,12 @@ public class HomeFragment extends Fragment {
         binding.emptyStateLayout.setVisibility(empty ? View.VISIBLE : View.GONE);
         binding.challengesRecyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         adapter.submitList(challenges);
+
+        com.google.android.material.appbar.MaterialToolbar toolbar = requireActivity().findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            boolean archived = Boolean.TRUE.equals(viewModel.getShowArchived().getValue());
+            toolbar.setTitle(archived ? R.string.show_archived : R.string.home_title);
+        }
     }
 
     private void openChallenge(Challenge challenge) {

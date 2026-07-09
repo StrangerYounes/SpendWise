@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_share"
+        android:title="@string/invite_friends"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_edit"
+        android:title="@string/edit_challenge"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_archive"
+        android:title="@string/archive_challenge"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_leave"
+        android:title="@string/leave_challenge"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_delete"
+        android:title="@string/delete_challenge"
+        app:showAsAction="never" />
+</menu>

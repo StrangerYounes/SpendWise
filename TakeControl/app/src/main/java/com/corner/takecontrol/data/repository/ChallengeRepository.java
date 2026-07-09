@@ -51,7 +51,7 @@ public class ChallengeRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
-    public ListenerRegistration listenToMyChallenges(String userId, RepositoryCallback<List<Challenge>> callback) {
+    public ListenerRegistration listenToMyChallenges(String userId, boolean showArchived, RepositoryCallback<List<Challenge>> callback) {
         return firestore.collection(COLLECTION_CHALLENGES)
                 .whereArrayContains("memberIds", userId)
                 .addSnapshotListener((snapshot, error) -> {
@@ -66,6 +66,10 @@ public class ChallengeRepository {
                     List<Challenge> challenges = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : snapshot) {
                         Challenge challenge = doc.toObject(Challenge.class);
+                        boolean isArchived = challenge.getArchivedMemberIds() != null && challenge.getArchivedMemberIds().contains(userId);
+                        if (showArchived != isArchived) {
+                            continue;
+                        }
                         challenge.setId(doc.getId());
                         challenges.add(challenge);
                     }
@@ -192,6 +196,30 @@ public class ChallengeRepository {
     public void completeChallenge(String challengeId, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("status", ChallengeStatus.COMPLETED.getValue())
+                .addOnSuccessListener(unused -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void deleteChallenge(String challengeId, RepositoryCallback<Void> callback) {
+        // Note: Simple delete doesn't delete subcollections in Firestore from client SDK
+        // but for a small app it might be okay or handled by cloud functions.
+        // We'll just delete the main document for now.
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .delete()
+                .addOnSuccessListener(unused -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void leaveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .update("memberIds", com.google.firebase.firestore.FieldValue.arrayRemove(userId))
+                .addOnSuccessListener(unused -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void archiveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .update("archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
                 .addOnSuccessListener(unused -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }

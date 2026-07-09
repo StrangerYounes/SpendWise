@@ -35,6 +35,7 @@ public class ChallengeDetailViewModel extends ViewModel {
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> shareCode = new MutableLiveData<>();
     private final MutableLiveData<Boolean> actionComplete = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> challengeDeleted = new MutableLiveData<>();
 
     private ListenerRegistration challengeListener;
     private ListenerRegistration tasksListener;
@@ -72,6 +73,10 @@ public class ChallengeDetailViewModel extends ViewModel {
 
     public LiveData<String> getShareCode() {
         return shareCode;
+    }
+
+    public LiveData<Boolean> getChallengeDeleted() {
+        return challengeDeleted;
     }
 
     public void load(String challengeId) {
@@ -354,6 +359,53 @@ public class ChallengeDetailViewModel extends ViewModel {
             public void onSuccess(Void result) {
                 actionComplete.setValue(true);
             }
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+            }
+        });
+    }
+
+    public void deleteChallenge() {
+        if (challengeId == null) return;
+        challengeRepository.deleteChallenge(challengeId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                challengeDeleted.setValue(true);
+            }
+
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+            }
+        });
+    }
+
+    public void leaveChallenge() {
+        if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        challengeRepository.leaveChallenge(challengeId, userId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                challengeDeleted.setValue(true);
+            }
+
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+            }
+        });
+    }
+
+    public void archiveChallenge() {
+        if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        challengeRepository.archiveChallenge(challengeId, userId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                challengeDeleted.setValue(true);
+            }
+
             @Override
             public void onError(String message) {
                 error.setValue(message);
