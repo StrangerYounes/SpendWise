@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private final AuthRepository authRepository = new AuthRepository();
     private final UserRepository userRepository = new UserRepository();
     private ListenerRegistration notificationListener;
+    private FirebaseAuth.AuthStateListener authStateListener;
     private String pendingChallengeId;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -78,7 +79,19 @@ public class MainActivity extends AppCompatActivity {
         });
 
         requestNotificationPermission();
-        startListeningToNotifications();
+        
+        authStateListener = firebaseAuth -> {
+            if (firebaseAuth.getCurrentUser() != null) {
+                startListeningToNotifications();
+            } else {
+                if (notificationListener != null) {
+                    notificationListener.remove();
+                    notificationListener = null;
+                }
+            }
+        };
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
+
         handleWidgetIntent(getIntent());
     }
 
@@ -139,15 +152,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(List<AppNotification> result) {
                 if (result != null && !result.isEmpty()) {
-                    for (AppNotification notification : result) {
-                        showNotificationSnackbar(notification);
-                        userRepository.markNotificationRead(userId, notification.getId());
+                    // Show only the most recent notification if there are many to avoid spamming Snackbars
+                    AppNotification notification = result.get(result.size() - 1);
+                    showNotificationSnackbar(notification);
+                    
+                    // Mark all as read
+                    for (AppNotification n : result) {
+                        userRepository.markNotificationRead(userId, n.getId());
                     }
                 }
             }
 
             @Override
-            public void onError(String message) {}
+            public void onError(String message) {
+                android.util.Log.e("MainActivity", "Notification error: " + message);
+            }
         });
     }
 
@@ -166,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (notificationListener != null) notificationListener.remove();
+        if (authStateListener != null) FirebaseAuth.getInstance().removeAuthStateListener(authStateListener);
         super.onDestroy();
     }
 

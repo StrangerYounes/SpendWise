@@ -216,7 +216,6 @@ public class UserRepository {
         return firestore.collection("users").document(userId)
                 .collection("notifications")
                 .whereEqualTo("read", false)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
                         callback.onError(error.getMessage());
