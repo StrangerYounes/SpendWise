@@ -20,9 +20,11 @@ import java.util.Objects;
 public class UserRepository {
 
     private final FirebaseFirestore firestore;
+    private final StatsRepository statsRepository;
 
     public UserRepository() {
         firestore = FirebaseFirestore.getInstance();
+        statsRepository = new StatsRepository();
     }
 
     public void getUserProfile(String userId, RepositoryCallback<UserProfile> callback) {
@@ -126,6 +128,9 @@ public class UserRepository {
 
                 profile.setAchievements(achievements);
 
+                // Update Statistics
+                statsRepository.updateStats(userId, task, task.getTargetValue(), true, null);
+
                 firestore.collection("users").document(userId)
                         .set(profile)
                         .addOnSuccessListener(unused -> callback.onSuccess(null))
@@ -152,6 +157,9 @@ public class UserRepository {
                 long xpReward = XpUtil.getXpReward(task.getTaskType(), wasLate);
                 profile.setXp(Math.max(0, profile.getXp() - xpReward));
                 profile.setLevel(XpUtil.calculateLevel(profile.getXp()));
+
+                // Update Statistics (Deduct)
+                statsRepository.updateStats(userId, task, task.getTargetValue(), false, null);
 
                 // Note: We don't deduct streaks because users might have completed other tasks
                 // but we could if this was the ONLY task completed today. 

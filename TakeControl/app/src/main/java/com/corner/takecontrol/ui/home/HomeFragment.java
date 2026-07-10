@@ -70,6 +70,11 @@ public class HomeFragment extends Fragment {
             Navigation.findNavController(v).navigate(R.id.action_home_to_customization);
         });
 
+        binding.statisticsFab.setOnClickListener(v -> {
+            toggleMenu();
+            Navigation.findNavController(v).navigate(R.id.action_home_to_statistics);
+        });
+
         binding.templatesFab.setOnClickListener(v -> {
             toggleMenu();
             TemplatesDialogFragment dialog = new TemplatesDialogFragment();
@@ -173,6 +178,12 @@ public class HomeFragment extends Fragment {
         binding.exploreFab.setVisibility(visibility);
         binding.templatesFab.setVisibility(visibility);
         binding.customizationFab.setVisibility(visibility);
+        
+        if (com.corner.takecontrol.FeatureFlags.STATISTICS_UI_ENABLED) {
+            binding.statisticsFab.setVisibility(visibility);
+        } else {
+            binding.statisticsFab.setVisibility(View.GONE);
+        }
 
         float rotation = isMenuExpanded ? 45f : 0f;
         binding.mainFab.animate().rotation(rotation).setDuration(200).start();

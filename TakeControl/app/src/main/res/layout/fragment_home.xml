@@ -70,6 +70,18 @@
 
     <!-- Sub-FABs for the Speed Dial menu -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/statisticsFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="12dp"
+        android:text="My Stats"
+        android:visibility="gone"
+        app:icon="@drawable/ic_refresh"
+        app:layout_constraintBottom_toTopOf="@id/customizationFab"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/customizationFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

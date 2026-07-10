@@ -25,6 +25,10 @@ service cloud.firestore {
       }
     }
 
+    match /user_stats/{userId} {
+      allow read, write: if isUser(userId);
+    }
+
     match /challenges/{challengeId} {
       // Allow getting an individual challenge if signed in.
       // Privacy is enforced at the listing/searching level and for sub-collections.

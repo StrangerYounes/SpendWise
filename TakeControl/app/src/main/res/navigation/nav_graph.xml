@@ -53,7 +53,15 @@
         <action
             android:id="@+id/action_home_to_customization"
             app:destination="@id/profileCustomizationFragment" />
+        <action
+            android:id="@+id/action_home_to_statistics"
+            app:destination="@id/statisticsFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.corner.takecontrol.ui.stats.StatisticsFragment"
+        android:label="My Statistics" />
 
     <fragment
         android:id="@+id/profileCustomizationFragment"
