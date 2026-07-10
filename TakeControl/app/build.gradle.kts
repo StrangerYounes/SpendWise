@@ -11,8 +11,8 @@ android {
         applicationId = "com.corner.takecontrol"
         minSdk = 24
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,6 +52,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    // TODO: Add implementation(libs.firebase.storage) if project is upgraded to a paid tier.
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services)

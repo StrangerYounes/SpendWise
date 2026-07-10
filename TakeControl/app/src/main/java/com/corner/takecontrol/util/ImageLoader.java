@@ -48,7 +48,7 @@ public class ImageLoader {
         }
 
         // 2. Fallback to legacy photoUrl if it's a local URI (for immediate preview)
-        if (photoUrl != null && !photoUrl.isEmpty() && photoUrl.startsWith("content://")) {
+        if (photoUrl != null && photoUrl.startsWith("content://")) {
             try {
                 imageView.setImageURI(android.net.Uri.parse(photoUrl));
                 return;
