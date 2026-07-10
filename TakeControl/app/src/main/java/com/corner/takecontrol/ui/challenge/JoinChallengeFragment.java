@@ -67,6 +67,12 @@ public class JoinChallengeFragment extends Fragment {
                 }
             }
         });
+
+        viewModel.getSlotLimitExceeded().observe(getViewLifecycleOwner(), status -> {
+            if (status != null) {
+                com.corner.takecontrol.util.ChallengeUiUtil.showSlotLimitDialog(requireContext(), status);
+            }
+        });
     }
 
     private void showPasswordDialog(String challengeId) {

@@ -342,6 +342,27 @@ public class ChallengeRepository {
         return allTasks;
     }
 
+    public void getActiveChallengeCount(String userId, RepositoryCallback<Integer> callback) {
+        firestore.collection(COLLECTION_CHALLENGES)
+                .whereArrayContains("memberIds", userId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    int count = 0;
+                    for (DocumentSnapshot doc : snapshot) {
+                        Challenge challenge = doc.toObject(Challenge.class);
+                        if (challenge != null) {
+                            // Count as active if it's ACTIVE or DRAFT and not archived by this user
+                            boolean isArchived = challenge.getArchivedMemberIds() != null && challenge.getArchivedMemberIds().contains(userId);
+                            if (!isArchived && (challenge.getStatusEnum() == ChallengeStatus.ACTIVE || challenge.getStatusEnum() == ChallengeStatus.DRAFT)) {
+                                count++;
+                            }
+                        }
+                    }
+                    callback.onSuccess(count);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void saveProgress(String challengeId, TaskProgress progress, RepositoryCallback<Void> callback) {
         String docId = TaskProgress.buildDocumentId(progress.getUserId(), progress.getTaskId(), progress.getPeriodKey());
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)

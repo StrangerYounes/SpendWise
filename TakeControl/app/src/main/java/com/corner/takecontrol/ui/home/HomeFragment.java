@@ -43,6 +43,7 @@ public class HomeFragment extends Fragment {
         setupMenu();
 
         adapter = new ChallengeAdapter(this::openChallenge);
+        adapter.setOnProfileClickListener(() -> Navigation.findNavController(requireView()).navigate(R.id.action_home_to_customization));
         binding.challengesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.challengesRecyclerView.setAdapter(adapter);
 
@@ -62,6 +63,11 @@ public class HomeFragment extends Fragment {
         binding.exploreFab.setOnClickListener(v -> {
             toggleMenu();
             Navigation.findNavController(v).navigate(R.id.action_home_to_explore);
+        });
+
+        binding.customizationFab.setOnClickListener(v -> {
+            toggleMenu();
+            Navigation.findNavController(v).navigate(R.id.action_home_to_customization);
         });
 
         binding.templatesFab.setOnClickListener(v -> {
@@ -166,6 +172,7 @@ public class HomeFragment extends Fragment {
         binding.joinFab.setVisibility(visibility);
         binding.exploreFab.setVisibility(visibility);
         binding.templatesFab.setVisibility(visibility);
+        binding.customizationFab.setVisibility(visibility);
 
         float rotation = isMenuExpanded ? 45f : 0f;
         binding.mainFab.animate().rotation(rotation).setDuration(200).start();

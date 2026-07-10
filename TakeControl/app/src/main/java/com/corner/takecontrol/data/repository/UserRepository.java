@@ -57,6 +57,13 @@ public class UserRepository {
                 });
     }
 
+    public void updateUserProfile(String userId, UserProfile profile, RepositoryCallback<Void> callback) {
+        firestore.collection("users").document(userId)
+                .set(profile)
+                .addOnSuccessListener(unused -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void rewardTaskCompletion(String userId, ChallengeTask task, boolean isLate, RepositoryCallback<Void> callback) {
         getUserProfile(userId, new RepositoryCallback<>() {
             @Override
@@ -96,7 +103,10 @@ public class UserRepository {
                 profile.setXp(profile.getXp() + xpReward);
                 profile.setLevel(XpUtil.calculateLevel(profile.getXp()));
 
-                // 3. Check Achievements
+                // 3. Unlock Progression Rewards
+                com.corner.takecontrol.util.ProgressionUtil.checkAndUnlockRewards(profile);
+
+                // 4. Check Achievements
                 List<String> achievements = profile.getAchievements();
                 if (achievements == null) achievements = new ArrayList<>();
 

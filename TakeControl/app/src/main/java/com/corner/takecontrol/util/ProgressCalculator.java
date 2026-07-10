@@ -108,7 +108,12 @@ public final class ProgressCalculator {
             String name = profile != null && profile.getDisplayName() != null
                     ? profile.getDisplayName()
                     : "Member";
-            entries.add(new LeaderboardEntry(memberId, name, percent));
+            
+            String photoUrl = profile != null ? profile.getPhotoUrl() : null;
+            String frameId = profile != null ? profile.getEquippedFrameId() : null;
+            String titleId = profile != null ? profile.getEquippedTitleId() : null;
+
+            entries.add(new LeaderboardEntry(memberId, name, percent, photoUrl, frameId, titleId));
         }
 
         entries.sort(Comparator.comparingInt(LeaderboardEntry::getCompletionPercent).reversed());

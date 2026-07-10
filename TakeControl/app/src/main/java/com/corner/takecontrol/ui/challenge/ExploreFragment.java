@@ -77,6 +77,12 @@ public class ExploreFragment extends Fragment {
                 Navigation.findNavController(requireView()).navigate(R.id.action_explore_to_detail, args);
             }
         });
+
+        viewModel.getSlotLimitExceeded().observe(getViewLifecycleOwner(), status -> {
+            if (status != null) {
+                com.corner.takecontrol.util.ChallengeUiUtil.showSlotLimitDialog(requireContext(), status);
+            }
+        });
     }
 
     private void onChallengeClicked(Challenge challenge) {

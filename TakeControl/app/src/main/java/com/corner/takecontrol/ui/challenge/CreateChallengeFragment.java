@@ -108,6 +108,12 @@ public class CreateChallengeFragment extends Fragment {
             }
         });
 
+        viewModel.getSlotLimitExceeded().observe(getViewLifecycleOwner(), status -> {
+            if (status != null) {
+                com.corner.takecontrol.util.ChallengeUiUtil.showSlotLimitDialog(requireContext(), status);
+            }
+        });
+
         viewModel.getChallengeToEdit().observe(getViewLifecycleOwner(), challenge -> {
             if (challenge != null) {
                 renderChallenge(challenge);

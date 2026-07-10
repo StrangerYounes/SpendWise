@@ -50,7 +50,15 @@
         <action
             android:id="@+id/action_home_to_explore"
             app:destination="@id/exploreFragment" />
+        <action
+            android:id="@+id/action_home_to_customization"
+            app:destination="@id/profileCustomizationFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/profileCustomizationFragment"
+        android:name="com.corner.takecontrol.ui.profile.ProfileCustomizationFragment"
+        android:label="@string/profile_customization" />
 
     <fragment
         android:id="@+id/createChallengeFragment"
@@ -82,6 +90,9 @@
         <action
             android:id="@+id/action_detail_to_edit"
             app:destination="@id/createChallengeFragment" />
+        <action
+            android:id="@+id/action_detail_to_customization"
+            app:destination="@id/profileCustomizationFragment" />
     </fragment>
 
     <fragment

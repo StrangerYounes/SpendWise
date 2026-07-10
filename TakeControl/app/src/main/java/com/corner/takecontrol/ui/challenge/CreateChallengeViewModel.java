@@ -19,16 +19,19 @@ import java.util.List;
 public class CreateChallengeViewModel extends ViewModel {
 
     private final ChallengeRepository challengeRepository;
+    private final com.corner.takecontrol.data.repository.UserRepository userRepository;
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> challengeCreated = new MutableLiveData<>();
     private final MutableLiveData<Challenge> challengeToEdit = new MutableLiveData<>();
     private final MutableLiveData<List<ChallengeTask>> tasksUpdated = new MutableLiveData<>();
+    private final MutableLiveData<com.corner.takecontrol.util.ProgressionUtil.SlotStatus> slotLimitExceeded = new MutableLiveData<>();
     private final List<ChallengeTask> pendingTasks = new ArrayList<>();
     private String currentChallengeId;
 
     public CreateChallengeViewModel() {
         challengeRepository = new ChallengeRepository();
+        userRepository = new com.corner.takecontrol.data.repository.UserRepository();
     }
 
     public LiveData<Boolean> getLoading() {
@@ -49,6 +52,10 @@ public class CreateChallengeViewModel extends ViewModel {
 
     public LiveData<List<ChallengeTask>> getTasksUpdated() {
         return tasksUpdated;
+    }
+
+    public LiveData<com.corner.takecontrol.util.ProgressionUtil.SlotStatus> getSlotLimitExceeded() {
+        return slotLimitExceeded;
     }
 
     public void addPendingTask(ChallengeTask task) {
@@ -169,15 +176,16 @@ public class CreateChallengeViewModel extends ViewModel {
             return;
         }
 
-        String encryptedPassword = null;
+        String encryptedPasswordResult = null;
         if (!isPublic && password != null && !password.isEmpty()) {
             try {
-                encryptedPassword = SecurityUtil.encrypt(password);
+                encryptedPasswordResult = SecurityUtil.encrypt(password);
             } catch (Exception e) {
                 error.setValue("Encryption failed: " + e.getMessage());
                 return;
             }
         }
+        final String encryptedPassword = encryptedPasswordResult;
 
         if (currentChallengeId != null) {
             updateChallenge(title, description, durationDays, maxSkips, isPublic, encryptedPassword);
@@ -186,12 +194,39 @@ public class CreateChallengeViewModel extends ViewModel {
 
         loading.setValue(true);
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        challengeRepository.createChallenge(userId, title.trim(), description != null ? description.trim() : "",
-                durationDays, maxSkips, isPublic, encryptedPassword, new RepositoryCallback<>() {
+
+        // Check slots before creating
+        userRepository.getUserProfile(userId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(com.corner.takecontrol.data.model.UserProfile profile) {
+                challengeRepository.getActiveChallengeCount(userId, new RepositoryCallback<>() {
                     @Override
-                    public void onSuccess(String challengeId) {
-                        currentChallengeId = challengeId;
-                        saveTasksSequentially(0);
+                    public void onSuccess(Integer count) {
+                        int maxSlots = com.corner.takecontrol.util.ProgressionUtil.getMaxChallengeSlots(profile);
+                        if (count >= maxSlots) {
+                            loading.setValue(false);
+                            slotLimitExceeded.setValue(new com.corner.takecontrol.util.ProgressionUtil.SlotStatus(
+                                    count, maxSlots, com.corner.takecontrol.util.ProgressionUtil.getNextSlotLevel(profile.getLevel()),
+                                    profile.isUnlimitedChallengeSlots()
+                            ));
+                            return;
+                        }
+
+                        // Proceed with creation
+                        challengeRepository.createChallenge(userId, title.trim(), description != null ? description.trim() : "",
+                                durationDays, maxSkips, isPublic, encryptedPassword, new RepositoryCallback<>() {
+                                    @Override
+                                    public void onSuccess(String challengeId) {
+                                        currentChallengeId = challengeId;
+                                        saveTasksSequentially(0);
+                                    }
+
+                                    @Override
+                                    public void onError(String message) {
+                                        loading.setValue(false);
+                                        error.setValue(message);
+                                    }
+                                });
                     }
 
                     @Override
@@ -200,6 +235,14 @@ public class CreateChallengeViewModel extends ViewModel {
                         error.setValue(message);
                     }
                 });
+            }
+
+            @Override
+            public void onError(String message) {
+                loading.setValue(false);
+                error.setValue(message);
+            }
+        });
     }
 
     private void updateChallenge(String title, String description, int durationDays, int maxSkips, boolean isPublic, String encryptedPassword) {

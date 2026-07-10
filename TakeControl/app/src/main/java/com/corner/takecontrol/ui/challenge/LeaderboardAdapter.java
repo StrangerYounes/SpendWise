@@ -27,10 +27,15 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         void onKick(LeaderboardEntry entry);
     }
 
+    public interface OnProfileClickListener {
+        void onProfileClick();
+    }
+
     private final List<LeaderboardEntry> entries = new ArrayList<>();
     private final String currentUserId;
     private final OnNudgeListener nudgeListener;
     private OnKickListener kickListener;
+    private OnProfileClickListener profileClickListener;
     private boolean isOwner = false;
 
     public LeaderboardAdapter(String currentUserId, OnNudgeListener nudgeListener) {
@@ -40,6 +45,10 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
 
     public void setOnKickListener(OnKickListener kickListener) {
         this.kickListener = kickListener;
+    }
+
+    public void setOnProfileClickListener(OnProfileClickListener listener) {
+        this.profileClickListener = listener;
     }
 
     public void setOwner(boolean owner) {
@@ -94,7 +103,37 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
                     ContextCompat.getColor(holder.itemView.getContext(), R.color.surface_variant));
         }
 
+        holder.profileImage.setOnClickListener(v -> {
+            if (isCurrentUser && profileClickListener != null) {
+                profileClickListener.onProfileClick();
+            }
+        });
+
         holder.nameText.setText(displayName);
+
+        if (entry.getPhotoUrl() != null) {
+            try {
+                holder.profileImage.setImageURI(android.net.Uri.parse(entry.getPhotoUrl()));
+            } catch (Exception e) {
+                holder.profileImage.setImageResource(R.drawable.ic_streak);
+            }
+        } else {
+            holder.profileImage.setImageResource(R.drawable.ic_streak);
+        }
+
+        String equippedTitleId = entry.getEquippedTitleId();
+        if (equippedTitleId != null) {
+            holder.equippedTitleText.setVisibility(View.VISIBLE);
+            holder.equippedTitleText.setText(com.corner.takecontrol.util.ProgressionUtil.getCosmeticName(equippedTitleId));
+        } else {
+            holder.equippedTitleText.setVisibility(View.GONE);
+        }
+
+        String frameId = entry.getEquippedFrameId();
+        int colorRes = com.corner.takecontrol.util.ProgressionUtil.getFrameColorRes(frameId);
+        holder.profileImage.setStrokeColor(android.content.res.ColorStateList.valueOf(
+                ContextCompat.getColor(holder.itemView.getContext(), colorRes)));
+
         holder.percentText.setText(holder.itemView.getContext()
                 .getString(R.string.progress_percent, entry.getCompletionPercent()));
         holder.progressBar.setProgress(entry.getCompletionPercent());
@@ -137,7 +176,9 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
     static class ViewHolder extends RecyclerView.ViewHolder {
         final MaterialCardView leaderboardCard;
         final TextView rankText;
+        final com.google.android.material.imageview.ShapeableImageView profileImage;
         final TextView nameText;
+        final TextView equippedTitleText;
         final TextView percentText;
         final LinearProgressIndicator progressBar;
         final View nudgeButton;
@@ -147,7 +188,9 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
             super(itemView);
             leaderboardCard = itemView.findViewById(R.id.leaderboardCard);
             rankText = itemView.findViewById(R.id.rankText);
+            profileImage = itemView.findViewById(R.id.profileImage);
             nameText = itemView.findViewById(R.id.nameText);
+            equippedTitleText = itemView.findViewById(R.id.equippedTitleText);
             percentText = itemView.findViewById(R.id.percentText);
             progressBar = itemView.findViewById(R.id.progressBar);
             nudgeButton = itemView.findViewById(R.id.nudgeButton);

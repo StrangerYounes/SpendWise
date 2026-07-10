@@ -27,14 +27,23 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         void onChallengeClick(Challenge challenge);
     }
 
+    public interface OnProfileClickListener {
+        void onProfileClick();
+    }
+
     private final List<Challenge> challenges = new ArrayList<>();
     private final OnChallengeClickListener listener;
+    private OnProfileClickListener profileClickListener;
     private String greetingName;
     private int currentStreak;
     private UserProfile userProfile;
 
     public ChallengeAdapter(OnChallengeClickListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnProfileClickListener(OnProfileClickListener listener) {
+        this.profileClickListener = listener;
     }
 
     public void setGreetingName(String name) {
@@ -105,7 +114,34 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             if (userProfile != null) {
                 header.levelLayout.setVisibility(View.VISIBLE);
                 header.levelText.setText("Lvl " + userProfile.getLevel());
-                
+
+                if (userProfile.getPhotoUrl() != null) {
+                    try {
+                        header.profileImage.setImageURI(android.net.Uri.parse(userProfile.getPhotoUrl()));
+                    } catch (Exception e) {
+                        header.profileImage.setImageResource(R.drawable.ic_streak);
+                    }
+                } else {
+                    header.profileImage.setImageResource(R.drawable.ic_streak);
+                }
+
+                String equippedTitleId = userProfile.getEquippedTitleId();
+                if (equippedTitleId != null) {
+                    header.equippedTitleText.setVisibility(View.VISIBLE);
+                    header.equippedTitleText.setText(com.corner.takecontrol.util.ProgressionUtil.getCosmeticName(equippedTitleId));
+                } else {
+                    header.equippedTitleText.setVisibility(View.GONE);
+                }
+
+                String frameId = userProfile.getEquippedFrameId();
+                int colorRes = com.corner.takecontrol.util.ProgressionUtil.getFrameColorRes(frameId);
+                header.profileImage.setStrokeColor(android.content.res.ColorStateList.valueOf(
+                        ContextCompat.getColor(holder.itemView.getContext(), colorRes)));
+
+                header.profileImage.setOnClickListener(v -> {
+                    if (profileClickListener != null) profileClickListener.onProfileClick();
+                });
+
                 long currentXp = userProfile.getXp();
                 long levelXpStart = XpUtil.getXpForLevel(userProfile.getLevel());
                 long nextLevelXpStart = XpUtil.getXpForLevel(userProfile.getLevel() + 1);
@@ -159,6 +195,8 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     static class HeaderViewHolder extends RecyclerView.ViewHolder {
         final TextView greetingText;
+        final TextView equippedTitleText;
+        final com.google.android.material.imageview.ShapeableImageView profileImage;
         final View streakLayout;
         final TextView streakText;
         final View levelLayout;
@@ -169,6 +207,8 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         HeaderViewHolder(@NonNull View itemView) {
             super(itemView);
             greetingText = itemView.findViewById(R.id.greetingText);
+            equippedTitleText = itemView.findViewById(R.id.equippedTitleText);
+            profileImage = itemView.findViewById(R.id.profileImage);
             streakLayout = itemView.findViewById(R.id.streakLayout);
             streakText = itemView.findViewById(R.id.streakText);
             levelLayout = itemView.findViewById(R.id.levelLayout);

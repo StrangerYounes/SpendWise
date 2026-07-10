@@ -15,14 +15,17 @@ import java.util.stream.Collectors;
 public class ExploreViewModel extends ViewModel {
 
     private final ChallengeRepository challengeRepository;
+    private final com.corner.takecontrol.data.repository.UserRepository userRepository;
     private final MutableLiveData<List<Challenge>> publicChallenges = new MutableLiveData<>();
     private final MutableLiveData<List<Challenge>> filteredChallenges = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> challengeJoined = new MutableLiveData<>();
+    private final MutableLiveData<com.corner.takecontrol.util.ProgressionUtil.SlotStatus> slotLimitExceeded = new MutableLiveData<>();
 
     public ExploreViewModel() {
         challengeRepository = new ChallengeRepository();
+        userRepository = new com.corner.takecontrol.data.repository.UserRepository();
         loadPublicChallenges();
     }
 
@@ -40,6 +43,10 @@ public class ExploreViewModel extends ViewModel {
 
     public LiveData<String> getChallengeJoined() {
         return challengeJoined;
+    }
+
+    public LiveData<com.corner.takecontrol.util.ProgressionUtil.SlotStatus> getSlotLimitExceeded() {
+        return slotLimitExceeded;
     }
 
     public void consumeChallengeJoined() {
@@ -88,11 +95,43 @@ public class ExploreViewModel extends ViewModel {
         if (userId == null) return;
 
         loading.setValue(true);
-        challengeRepository.joinChallenge(userId, challengeId, new RepositoryCallback<>() {
+        userRepository.getUserProfile(userId, new RepositoryCallback<>() {
             @Override
-            public void onSuccess(String result) {
-                loading.setValue(false);
-                challengeJoined.setValue(result);
+            public void onSuccess(com.corner.takecontrol.data.model.UserProfile profile) {
+                challengeRepository.getActiveChallengeCount(userId, new RepositoryCallback<>() {
+                    @Override
+                    public void onSuccess(Integer count) {
+                        int maxSlots = com.corner.takecontrol.util.ProgressionUtil.getMaxChallengeSlots(profile);
+                        if (count >= maxSlots) {
+                            loading.setValue(false);
+                            slotLimitExceeded.setValue(new com.corner.takecontrol.util.ProgressionUtil.SlotStatus(
+                                    count, maxSlots, com.corner.takecontrol.util.ProgressionUtil.getNextSlotLevel(profile.getLevel()),
+                                    profile.isUnlimitedChallengeSlots()
+                            ));
+                            return;
+                        }
+
+                        challengeRepository.joinChallenge(userId, challengeId, new RepositoryCallback<>() {
+                            @Override
+                            public void onSuccess(String result) {
+                                loading.setValue(false);
+                                challengeJoined.setValue(result);
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                loading.setValue(false);
+                                error.setValue(message);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        loading.setValue(false);
+                        error.setValue(message);
+                    }
+                });
             }
 
             @Override

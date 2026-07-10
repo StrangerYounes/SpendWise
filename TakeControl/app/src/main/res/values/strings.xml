@@ -133,4 +133,19 @@
     <string name="no_public_found">No public challenges found</string>
     <string name="enter_password_title">Enter Password</string>
     <string name="incorrect_password">Incorrect password</string>
+
+    <!-- Slot Limit -->
+    <string name="slot_limit_title">Challenge Limit Reached</string>
+    <string name="slot_limit_message">You are currently using %1$d out of %2$d available slots. Reach level %3$d to unlock another slot!</string>
+    <string name="slot_limit_message_no_next">You are currently using %1$d out of %2$d available slots. This is the maximum number of slots.</string>
+    <string name="ok">OK</string>
+
+    <!-- Cosmetic Rewards -->
+    <string name="profile_customization">Profile Customization</string>
+    <string name="frames">Frames</string>
+    <string name="titles">Titles</string>
+    <string name="locked_reward">Locked (Level %1$d)</string>
+    <string name="unlocked">Unlocked</string>
+    <string name="equip">Equip</string>
+    <string name="equipped">Equipped</string>
 </resources>

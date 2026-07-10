@@ -88,6 +88,9 @@ public class ChallengeDetailFragment extends Fragment {
                     viewModel.nudgeMember(entry.getUserId(), entry.getDisplayName());
                     Toast.makeText(requireContext(), "Nudge sent!", Toast.LENGTH_SHORT).show();
                 });
+        leaderboardAdapter.setOnProfileClickListener(() -> {
+            androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.action_detail_to_customization);
+        });
         leaderboardAdapter.setOnKickListener(entry -> {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Kick Member")

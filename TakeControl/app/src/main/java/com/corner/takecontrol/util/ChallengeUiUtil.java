@@ -75,6 +75,21 @@ public final class ChallengeUiUtil {
         }
     }
 
+    public static void showSlotLimitDialog(Context context, ProgressionUtil.SlotStatus status) {
+        String message;
+        if (status.nextLevel > 0) {
+            message = context.getString(R.string.slot_limit_message, status.current, status.max, status.nextLevel);
+        } else {
+            message = context.getString(R.string.slot_limit_message_no_next, status.current, status.max);
+        }
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.slot_limit_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.ok, null)
+                .show();
+    }
+
     private static long computeDaysRemaining(Date endDate) {
         Calendar end = Calendar.getInstance();
         end.setTime(endDate);
