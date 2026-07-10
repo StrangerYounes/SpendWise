@@ -16,6 +16,7 @@ public class SecurityUtil {
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
     private static final String KEY_ALIAS = "ChallengeKey";
     private static final String AES_MODE = "AES/GCM/NoPadding";
+    private static final byte[] SHARED_KEY = "TakeControl_2025".getBytes(StandardCharsets.UTF_8); // 16 bytes for AES-128
 
     public static String encrypt(String plainText) throws Exception {
         if (plainText == null || plainText.isEmpty()) return null;
@@ -38,6 +39,27 @@ public class SecurityUtil {
         cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), spec);
         byte[] decrypted = cipher.doFinal(combined, 12, combined.length - 12);
         return new String(decrypted, StandardCharsets.UTF_8);
+    }
+
+    public static byte[] encryptData(byte[] data) throws Exception {
+        Cipher cipher = Cipher.getInstance(AES_MODE);
+        javax.crypto.spec.SecretKeySpec keySpec = new javax.crypto.spec.SecretKeySpec(SHARED_KEY, "AES");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+        byte[] iv = cipher.getIV();
+        byte[] encrypted = cipher.doFinal(data);
+        byte[] combined = new byte[iv.length + encrypted.length];
+        System.arraycopy(iv, 0, combined, 0, iv.length);
+        System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
+        return combined;
+    }
+
+    public static byte[] decryptData(byte[] combined) throws Exception {
+        if (combined.length < 12) return null;
+        Cipher cipher = Cipher.getInstance(AES_MODE);
+        javax.crypto.spec.SecretKeySpec keySpec = new javax.crypto.spec.SecretKeySpec(SHARED_KEY, "AES");
+        GCMParameterSpec spec = new GCMParameterSpec(128, combined, 0, 12);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, spec);
+        return cipher.doFinal(combined, 12, combined.length - 12);
     }
 
     private static SecretKey getSecretKey() throws Exception {

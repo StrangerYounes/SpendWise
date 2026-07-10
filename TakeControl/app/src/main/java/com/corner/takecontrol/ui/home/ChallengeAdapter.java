@@ -115,15 +115,8 @@ public class ChallengeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 header.levelLayout.setVisibility(View.VISIBLE);
                 header.levelText.setText("Lvl " + userProfile.getLevel());
 
-                if (userProfile.getPhotoUrl() != null) {
-                    try {
-                        header.profileImage.setImageURI(android.net.Uri.parse(userProfile.getPhotoUrl()));
-                    } catch (Exception e) {
-                        header.profileImage.setImageResource(R.drawable.ic_streak);
-                    }
-                } else {
-                    header.profileImage.setImageResource(R.drawable.ic_streak);
-                }
+                com.corner.takecontrol.util.ImageLoader.loadProfileImage(
+                        userProfile.getEncryptedPhoto(), userProfile.getPhotoUrl(), header.profileImage, R.drawable.ic_streak);
 
                 String equippedTitleId = userProfile.getEquippedTitleId();
                 if (equippedTitleId != null) {

@@ -6,14 +6,16 @@ public class LeaderboardEntry {
     private final String displayName;
     private final int completionPercent;
     private final String photoUrl;
+    private final String encryptedPhoto;
     private final String equippedFrameId;
     private final String equippedTitleId;
 
-    public LeaderboardEntry(String userId, String displayName, int completionPercent, String photoUrl, String equippedFrameId, String equippedTitleId) {
+    public LeaderboardEntry(String userId, String displayName, int completionPercent, String photoUrl, String encryptedPhoto, String equippedFrameId, String equippedTitleId) {
         this.userId = userId;
         this.displayName = displayName;
         this.completionPercent = completionPercent;
         this.photoUrl = photoUrl;
+        this.encryptedPhoto = encryptedPhoto;
         this.equippedFrameId = equippedFrameId;
         this.equippedTitleId = equippedTitleId;
     }
@@ -32,6 +34,10 @@ public class LeaderboardEntry {
 
     public String getPhotoUrl() {
         return photoUrl;
+    }
+
+    public String getEncryptedPhoto() {
+        return encryptedPhoto;
     }
 
     public String getEquippedFrameId() {

@@ -111,15 +111,8 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
 
         holder.nameText.setText(displayName);
 
-        if (entry.getPhotoUrl() != null) {
-            try {
-                holder.profileImage.setImageURI(android.net.Uri.parse(entry.getPhotoUrl()));
-            } catch (Exception e) {
-                holder.profileImage.setImageResource(R.drawable.ic_streak);
-            }
-        } else {
-            holder.profileImage.setImageResource(R.drawable.ic_streak);
-        }
+        com.corner.takecontrol.util.ImageLoader.loadProfileImage(
+                entry.getEncryptedPhoto(), entry.getPhotoUrl(), holder.profileImage, R.drawable.ic_streak);
 
         String equippedTitleId = entry.getEquippedTitleId();
         if (equippedTitleId != null) {

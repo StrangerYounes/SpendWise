@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.corner.takecontrol.R;
 import com.corner.takecontrol.databinding.FragmentProfileCustomizationBinding;
 import com.corner.takecontrol.util.ProgressionUtil;
 
@@ -32,7 +33,7 @@ public class ProfileCustomizationFragment extends Fragment {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    viewModel.updatePhotoUrl(uri.toString());
+                    viewModel.uploadAndSetPhoto(uri, requireContext().getContentResolver());
                     binding.profileImage.setImageURI(uri);
                 }
             });
@@ -55,13 +56,9 @@ public class ProfileCustomizationFragment extends Fragment {
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
             if (profile != null) {
                 binding.displayNameInput.setText(profile.getDisplayName());
-                if (profile.getPhotoUrl() != null) {
-                    try {
-                        binding.profileImage.setImageURI(android.net.Uri.parse(profile.getPhotoUrl()));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+                
+                com.corner.takecontrol.util.ImageLoader.loadProfileImage(
+                        profile.getEncryptedPhoto(), profile.getPhotoUrl(), binding.profileImage, R.drawable.ic_streak);
 
                 // Update frame in preview
                 String frameId = profile.getEquippedFrameId();

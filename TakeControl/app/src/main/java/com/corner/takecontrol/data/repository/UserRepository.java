@@ -64,6 +64,9 @@ public class UserRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    // TODO: Implement uploadProfileImage(String userId, byte[] encryptedData, ...) using 
+    // com.google.firebase.storage.FirebaseStorage if project is upgraded to a paid tier.
+
     public void rewardTaskCompletion(String userId, ChallengeTask task, boolean isLate, RepositoryCallback<Void> callback) {
         getUserProfile(userId, new RepositoryCallback<>() {
             @Override

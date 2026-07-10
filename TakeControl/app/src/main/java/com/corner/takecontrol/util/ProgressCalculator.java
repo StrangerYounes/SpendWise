@@ -110,10 +110,11 @@ public final class ProgressCalculator {
                     : "Member";
             
             String photoUrl = profile != null ? profile.getPhotoUrl() : null;
+            String encryptedPhoto = profile != null ? profile.getEncryptedPhoto() : null;
             String frameId = profile != null ? profile.getEquippedFrameId() : null;
             String titleId = profile != null ? profile.getEquippedTitleId() : null;
 
-            entries.add(new LeaderboardEntry(memberId, name, percent, photoUrl, frameId, titleId));
+            entries.add(new LeaderboardEntry(memberId, name, percent, photoUrl, encryptedPhoto, frameId, titleId));
         }
 
         entries.sort(Comparator.comparingInt(LeaderboardEntry::getCompletionPercent).reversed());

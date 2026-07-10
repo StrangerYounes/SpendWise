@@ -13,6 +13,9 @@ public class UserProfile {
     private String id;
     private String displayName;
     private String photoUrl;
+    // TODO: Switch to Firebase Storage for better efficiency if upgrading from the free tier.
+    // This field stores the encrypted image bytes as a Base64 string directly in Firestore.
+    private String encryptedPhoto;
     private int currentStreak;
     private int longestStreak;
     private String lastCompletionDate; // YYYY-MM-DD
@@ -64,6 +67,14 @@ public class UserProfile {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    public String getEncryptedPhoto() {
+        return encryptedPhoto;
+    }
+
+    public void setEncryptedPhoto(String encryptedPhoto) {
+        this.encryptedPhoto = encryptedPhoto;
     }
 
     public int getCurrentStreak() {
