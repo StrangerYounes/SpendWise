@@ -13,6 +13,7 @@ public class AppNotification {
     private String fromUserName;
     private String type; // NUDGE, CHEER, ACHIEVEMENT
     private String message;
+    private String challengeId;
     private boolean read;
 
     @ServerTimestamp
@@ -20,12 +21,13 @@ public class AppNotification {
 
     public AppNotification() {}
 
-    public AppNotification(String toUserId, String fromUserId, String fromUserName, String type, String message) {
+    public AppNotification(String toUserId, String fromUserId, String fromUserName, String type, String message, String challengeId) {
         this.toUserId = toUserId;
         this.fromUserId = fromUserId;
         this.fromUserName = fromUserName;
         this.type = type;
         this.message = message;
+        this.challengeId = challengeId;
         this.read = false;
     }
 
@@ -75,6 +77,14 @@ public class AppNotification {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getChallengeId() {
+        return challengeId;
+    }
+
+    public void setChallengeId(String challengeId) {
+        this.challengeId = challengeId;
     }
 
     public boolean isRead() {

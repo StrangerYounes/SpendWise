@@ -301,7 +301,7 @@ public class ChallengeDetailViewModel extends ViewModel {
             public void onSuccess(UserProfile fromProfile) {
                 String fromName = fromProfile != null ? fromProfile.getDisplayName() : "Someone";
                 String message = String.format(java.util.Locale.US, "%s nudged you!", fromName);
-                AppNotification notification = new AppNotification(toUserId, fromUserId, fromName, "NUDGE", message);
+                AppNotification notification = new AppNotification(toUserId, fromUserId, fromName, "NUDGE", message, challengeId);
 
                 userRepository.sendNotification(toUserId, notification, new RepositoryCallback<>() {
                     @Override

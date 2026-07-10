@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private final AuthRepository authRepository = new AuthRepository();
     private final UserRepository userRepository = new UserRepository();
     private ListenerRegistration notificationListener;
+    private String pendingChallengeId;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -69,6 +70,11 @@ public class MainActivity extends AppCompatActivity {
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             toolbar.getMenu().clear();
+            if (destination.getId() == R.id.homeFragment && pendingChallengeId != null) {
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    binding.getRoot().post(this::navigateToPendingChallenge);
+                }
+            }
         });
 
         requestNotificationPermission();
@@ -85,14 +91,25 @@ public class MainActivity extends AppCompatActivity {
     private void handleWidgetIntent(Intent intent) {
         if (intent != null && intent.hasExtra("challengeId")) {
             String challengeId = intent.getStringExtra("challengeId");
-            if (challengeId != null && navController != null) {
-                Bundle args = new Bundle();
-                args.putString("challengeId", challengeId);
-                
-                // Clear backstack to home and navigate to new detail
-                navController.popBackStack(R.id.homeFragment, false);
-                navController.navigate(R.id.challengeDetailFragment, args);
+            if (challengeId != null) {
+                pendingChallengeId = challengeId;
+                if (navController != null && FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    if (navController.getCurrentDestination() != null &&
+                            navController.getCurrentDestination().getId() == R.id.homeFragment) {
+                        navigateToPendingChallenge();
+                    }
+                }
             }
+        }
+    }
+
+    private void navigateToPendingChallenge() {
+        if (pendingChallengeId != null && navController != null) {
+            String challengeId = pendingChallengeId;
+            pendingChallengeId = null;
+            Bundle args = new Bundle();
+            args.putString("challengeId", challengeId);
+            navController.navigate(R.id.challengeDetailFragment, args);
         }
     }
 
@@ -136,7 +153,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void showNotificationSnackbar(AppNotification notification) {
         Snackbar.make(binding.getRoot(), notification.getMessage(), Snackbar.LENGTH_LONG)
-                .setAction("Dismiss", v -> {})
+                .setAction("View", v -> {
+                    if (notification.getChallengeId() != null && navController != null) {
+                        Bundle args = new Bundle();
+                        args.putString("challengeId", notification.getChallengeId());
+                        navController.navigate(R.id.challengeDetailFragment, args);
+                    }
+                })
                 .show();
     }
 

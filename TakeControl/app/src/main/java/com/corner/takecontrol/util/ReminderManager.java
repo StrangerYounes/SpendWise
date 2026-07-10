@@ -48,6 +48,8 @@ public class ReminderManager {
 
                 Intent intent = new Intent(context, ReminderReceiver.class);
                 intent.putExtra(ReminderReceiver.EXTRA_TASK_TITLE, task.getTitle());
+                intent.putExtra(ReminderReceiver.EXTRA_CHALLENGE_ID, task.getChallengeId());
+                intent.putExtra(ReminderReceiver.EXTRA_CHALLENGE_ID, task.getChallengeId());
                 
                 int requestCode = task.getId() != null ? task.getId().hashCode() : (int) System.currentTimeMillis();
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(

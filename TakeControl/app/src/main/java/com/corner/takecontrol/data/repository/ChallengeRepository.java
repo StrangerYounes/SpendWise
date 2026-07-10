@@ -142,7 +142,7 @@ public class ChallengeRepository {
                 .collection(SUBCOLLECTION_TASKS)
                 .orderBy("orderIndex", Query.Direction.ASCENDING)
                 .get()
-                .addOnSuccessListener(snapshot -> callback.onSuccess(mapTasks(snapshot)))
+                .addOnSuccessListener(snapshot -> callback.onSuccess(mapTasks(snapshot, challengeId)))
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
@@ -155,15 +155,16 @@ public class ChallengeRepository {
                         callback.onError(error.getMessage());
                         return;
                     }
-                    callback.onSuccess(snapshot != null ? mapTasks(snapshot) : Collections.emptyList());
+                    callback.onSuccess(snapshot != null ? mapTasks(snapshot, challengeId) : Collections.emptyList());
                 });
     }
 
-    private List<ChallengeTask> mapTasks(com.google.firebase.firestore.QuerySnapshot snapshot) {
+    private List<ChallengeTask> mapTasks(com.google.firebase.firestore.QuerySnapshot snapshot, String challengeId) {
         List<ChallengeTask> tasks = new ArrayList<>();
         for (QueryDocumentSnapshot doc : snapshot) {
             ChallengeTask task = doc.toObject(ChallengeTask.class);
             task.setId(doc.getId());
+            task.setChallengeId(challengeId);
             tasks.add(task);
         }
         return tasks;
