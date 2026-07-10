@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.recyclerview)
+    implementation(libs.ucrop)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

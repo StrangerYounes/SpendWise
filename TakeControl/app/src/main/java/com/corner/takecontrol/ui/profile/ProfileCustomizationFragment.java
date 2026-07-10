@@ -10,12 +10,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.databinding.FragmentProfileCustomizationBinding;
 import com.corner.takecontrol.util.ProgressionUtil;
+import com.yalantis.ucrop.UCrop;
+
+import java.io.File;
 
 public class ProfileCustomizationFragment extends Fragment {
 
@@ -24,19 +26,57 @@ public class ProfileCustomizationFragment extends Fragment {
     private CosmeticRewardAdapter framesAdapter;
     private CosmeticRewardAdapter titlesAdapter;
 
+    private final androidx.activity.result.ActivityResultLauncher<android.content.Intent> cropImage =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    android.net.Uri resultUri = UCrop.getOutput(result.getData());
+                    if (resultUri != null) {
+                        viewModel.uploadAndSetPhoto(resultUri, requireContext().getContentResolver());
+                        binding.profileImage.setImageURI(resultUri);
+                    }
+                } else if (result.getResultCode() == UCrop.RESULT_ERROR) {
+                    android.content.Intent data = result.getData();
+                    if (data != null) {
+                        Throwable cropError = UCrop.getError(data);
+                        if (cropError != null) {
+                            Toast.makeText(requireContext(), cropError.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+            });
+
     private final androidx.activity.result.ActivityResultLauncher<androidx.activity.result.PickVisualMediaRequest> pickMedia =
             registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(), uri -> {
                 if (uri != null) {
-                    try {
-                        requireContext().getContentResolver().takePersistableUriPermission(uri,
-                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    viewModel.uploadAndSetPhoto(uri, requireContext().getContentResolver());
-                    binding.profileImage.setImageURI(uri);
+                    startCrop(uri);
                 }
             });
+
+    private void startCrop(@NonNull android.net.Uri uri) {
+        String destinationFileName = "cropped_profile_image.jpg";
+        android.net.Uri destinationUri = android.net.Uri.fromFile(new File(requireContext().getCacheDir(), destinationFileName));
+
+        UCrop uCrop = UCrop.of(uri, destinationUri);
+        uCrop.withAspectRatio(1, 1);
+        uCrop.withMaxResultSize(512, 512);
+
+        UCrop.Options options = new UCrop.Options();
+        options.setCircleDimmedLayer(true);
+        options.setShowCropGrid(false);
+        options.setCompressionFormat(android.graphics.Bitmap.CompressFormat.JPEG);
+        options.setCompressionQuality(90);
+        
+        // Framing options: allow rotation and scaling
+        options.setAllowedGestures(com.yalantis.ucrop.UCropActivity.SCALE, com.yalantis.ucrop.UCropActivity.ROTATE, com.yalantis.ucrop.UCropActivity.ALL);
+        
+        // Style it to match app
+        options.setToolbarColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.primary));
+        options.setStatusBarColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.primary_dark));
+        options.setToolbarWidgetColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.white));
+        options.setActiveControlsWidgetColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.secondary));
+
+        cropImage.launch(uCrop.withOptions(options).getIntent(requireContext()));
+    }
 
     @Nullable
     @Override
