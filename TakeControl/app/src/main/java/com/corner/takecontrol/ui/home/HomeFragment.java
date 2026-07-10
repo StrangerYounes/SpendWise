@@ -25,6 +25,7 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private HomeViewModel viewModel;
     private ChallengeAdapter adapter;
+    private boolean isMenuExpanded = false;
 
     @Nullable
     @Override
@@ -45,16 +46,26 @@ public class HomeFragment extends Fragment {
         binding.challengesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.challengesRecyclerView.setAdapter(adapter);
 
-        binding.createFab.setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.action_home_to_create));
+        // Speed Dial FAB Logic
+        binding.mainFab.setOnClickListener(v -> toggleMenu());
 
-        binding.joinFab.setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.action_home_to_join));
+        binding.createFab.setOnClickListener(v -> {
+            toggleMenu();
+            Navigation.findNavController(v).navigate(R.id.action_home_to_create);
+        });
 
-        binding.exploreFab.setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.action_home_to_explore));
+        binding.joinFab.setOnClickListener(v -> {
+            toggleMenu();
+            Navigation.findNavController(v).navigate(R.id.action_home_to_join);
+        });
+
+        binding.exploreFab.setOnClickListener(v -> {
+            toggleMenu();
+            Navigation.findNavController(v).navigate(R.id.action_home_to_explore);
+        });
 
         binding.templatesFab.setOnClickListener(v -> {
+            toggleMenu();
             TemplatesDialogFragment dialog = new TemplatesDialogFragment();
             dialog.setOnTemplateSelectedListener(template -> {
                 Bundle args = new Bundle();
@@ -145,6 +156,19 @@ public class HomeFragment extends Fragment {
         args.putString("challengeId", challenge.getId());
         Navigation.findNavController(requireView())
                 .navigate(R.id.action_home_to_detail, args);
+    }
+
+    private void toggleMenu() {
+        isMenuExpanded = !isMenuExpanded;
+
+        int visibility = isMenuExpanded ? View.VISIBLE : View.GONE;
+        binding.createFab.setVisibility(visibility);
+        binding.joinFab.setVisibility(visibility);
+        binding.exploreFab.setVisibility(visibility);
+        binding.templatesFab.setVisibility(visibility);
+
+        float rotation = isMenuExpanded ? 45f : 0f;
+        binding.mainFab.animate().rotation(rotation).setDuration(200).start();
     }
 
     @Override

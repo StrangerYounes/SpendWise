@@ -68,13 +68,15 @@
             android:textSize="15sp" />
     </LinearLayout>
 
+    <!-- Sub-FABs for the Speed Dial menu -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/exploreFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
         android:text="Explore"
+        android:visibility="gone"
         app:icon="@drawable/ic_join"
         app:layout_constraintBottom_toTopOf="@id/templatesFab"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -84,8 +86,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
         android:text="@string/templates"
+        android:visibility="gone"
         app:icon="@drawable/ic_empty_challenges"
         app:layout_constraintBottom_toTopOf="@id/createFab"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -95,22 +98,35 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
         android:text="@string/create_challenge"
+        android:visibility="gone"
         app:icon="@drawable/ic_add"
         app:layout_constraintBottom_toTopOf="@id/joinFab"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/joinFab"
-        style="@style/Widget.Material3.FloatingActionButton.Secondary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="12dp"
+        android:text="@string/join_challenge"
+        android:visibility="gone"
+        app:icon="@drawable/ic_join"
+        app:layout_constraintBottom_toTopOf="@id/mainFab"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Main FAB that controls expansion -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/mainFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/fab_margin"
-        android:contentDescription="@string/join_challenge"
-        app:srcCompat="@drawable/ic_join"
+        android:contentDescription="Action Menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@color/primary" />
+        app:srcCompat="@drawable/ic_add"
+        app:tint="@color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
