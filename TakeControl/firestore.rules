@@ -26,9 +26,15 @@ service cloud.firestore {
     }
 
     match /challenges/{challengeId} {
-      allow read: if isSignedIn() && (
+      // Allow getting an individual challenge if signed in.
+      // Privacy is enforced at the listing/searching level and for sub-collections.
+      allow get: if isSignedIn();
+
+      // Only allow listing challenges that are public, or where the user is a member/creator.
+      allow list: if isSignedIn() && (
         request.auth.uid == resource.data.createdBy ||
         request.auth.uid in resource.data.memberIds ||
+        resource.data.isPublic == true ||
         (resource.data.shareCode != null && request.query.limit <= 1)
       );
 
@@ -42,7 +48,8 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds']) &&
           (
             request.auth.uid in resource.data.memberIds ||
-            (resource.data.shareCode != null && request.auth.uid in request.resource.data.memberIds)
+            (resource.data.shareCode != null && request.auth.uid in request.resource.data.memberIds) ||
+            (resource.data.isPublic == true && request.auth.uid in request.resource.data.memberIds)
           )
         )
       );
@@ -50,9 +57,11 @@ service cloud.firestore {
       allow delete: if isSignedIn() && request.auth.uid == resource.data.createdBy;
 
       match /tasks/{taskId} {
+        // Only members, creators, or those looking at public challenges can read tasks.
         allow read: if isSignedIn() && (
           request.auth.uid == getChallenge(challengeId).createdBy ||
-          request.auth.uid in getChallenge(challengeId).memberIds
+          request.auth.uid in getChallenge(challengeId).memberIds ||
+          getChallenge(challengeId).isPublic == true
         );
 
         allow write: if isSignedIn()

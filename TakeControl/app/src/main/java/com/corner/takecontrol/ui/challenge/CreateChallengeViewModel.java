@@ -10,6 +10,7 @@ import com.corner.takecontrol.data.model.ChallengeTemplate;
 import com.corner.takecontrol.data.repository.ChallengeRepository;
 import com.corner.takecontrol.data.repository.RepositoryCallback;
 import com.corner.takecontrol.data.repository.TemplateRepository;
+import com.corner.takecontrol.util.SecurityUtil;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -154,7 +155,7 @@ public class CreateChallengeViewModel extends ViewModel {
         });
     }
 
-    public void createChallenge(String title, String description, int durationDays, int maxSkips) {
+    public void createChallenge(String title, String description, int durationDays, int maxSkips, boolean isPublic, String password) {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             error.setValue("You must be signed in");
             return;
@@ -168,15 +169,25 @@ public class CreateChallengeViewModel extends ViewModel {
             return;
         }
 
+        String encryptedPassword = null;
+        if (!isPublic && password != null && !password.isEmpty()) {
+            try {
+                encryptedPassword = SecurityUtil.encrypt(password);
+            } catch (Exception e) {
+                error.setValue("Encryption failed: " + e.getMessage());
+                return;
+            }
+        }
+
         if (currentChallengeId != null) {
-            updateChallenge(title, description, durationDays, maxSkips);
+            updateChallenge(title, description, durationDays, maxSkips, isPublic, encryptedPassword);
             return;
         }
 
         loading.setValue(true);
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         challengeRepository.createChallenge(userId, title.trim(), description != null ? description.trim() : "",
-                durationDays, maxSkips, new RepositoryCallback<>() {
+                durationDays, maxSkips, isPublic, encryptedPassword, new RepositoryCallback<>() {
                     @Override
                     public void onSuccess(String challengeId) {
                         currentChallengeId = challengeId;
@@ -191,12 +202,10 @@ public class CreateChallengeViewModel extends ViewModel {
                 });
     }
 
-    private void updateChallenge(String title, String description, int durationDays, int maxSkips) {
+    private void updateChallenge(String title, String description, int durationDays, int maxSkips, boolean isPublic, String encryptedPassword) {
         loading.setValue(true);
         Challenge challenge = challengeToEdit.getValue();
         if (challenge == null) {
-            // If we don't have the object, we just update the ID part (partial update not supported by repo yet)
-            // But loadChallenge should have populated this.
             loading.setValue(false);
             return;
         }
@@ -204,6 +213,8 @@ public class CreateChallengeViewModel extends ViewModel {
         challenge.setDescription(description != null ? description.trim() : "");
         challenge.setDurationDays(durationDays);
         challenge.setMaxSkips(maxSkips);
+        challenge.setPublic(isPublic);
+        challenge.setEncryptedPassword(encryptedPassword);
 
         challengeRepository.updateChallenge(currentChallengeId, challenge, new RepositoryCallback<>() {
             @Override

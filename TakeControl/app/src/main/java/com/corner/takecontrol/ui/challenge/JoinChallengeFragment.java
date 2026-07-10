@@ -13,7 +13,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
 import com.corner.takecontrol.R;
+import com.corner.takecontrol.data.model.Challenge;
+import com.corner.takecontrol.data.repository.RepositoryCallback;
 import com.corner.takecontrol.databinding.FragmentJoinChallengeBinding;
+import com.corner.takecontrol.util.SecurityUtil;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class JoinChallengeFragment extends Fragment {
 
@@ -48,13 +52,59 @@ public class JoinChallengeFragment extends Fragment {
             }
         });
 
-        viewModel.getJoinedChallengeId().observe(getViewLifecycleOwner(), challengeId -> {
-            if (challengeId != null) {
-                Bundle args = new Bundle();
-                args.putString("challengeId", challengeId);
-                Navigation.findNavController(view).navigate(R.id.action_join_to_detail, args);
+        viewModel.getJoinedChallengeId().observe(getViewLifecycleOwner(), result -> {
+            if (result != null) {
+                if (result.startsWith("CHECK_PASSWORD:")) {
+                    String id = result.substring("CHECK_PASSWORD:".length());
+                    showPasswordDialog(id);
+                } else {
+                    viewModel.consumeJoinedChallengeId();
+                    Bundle args = new Bundle();
+                    args.putString("challengeId", result);
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigate(R.id.action_join_to_detail, args);
+                    }
+                }
             }
         });
+    }
+
+    private void showPasswordDialog(String challengeId) {
+        viewModel.consumeJoinedChallengeId();
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_password_input, null);
+        android.widget.EditText passwordInput = dialogView.findViewById(R.id.passwordInput);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.enter_password_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.join, (dialog, which) -> {
+                    String input = passwordInput.getText().toString();
+                    
+                    // We need the challenge object to decrypt and verify
+                    com.corner.takecontrol.data.repository.ChallengeRepository repo = new com.corner.takecontrol.data.repository.ChallengeRepository();
+                    repo.getChallenge(challengeId, new RepositoryCallback<>() {
+                        @Override
+                        public void onSuccess(Challenge challenge) {
+                            try {
+                                String decrypted = SecurityUtil.decrypt(challenge.getEncryptedPassword());
+                                if (input.equals(decrypted)) {
+                                    viewModel.confirmJoin(challengeId);
+                                } else {
+                                    Toast.makeText(requireContext(), R.string.incorrect_password, Toast.LENGTH_SHORT).show();
+                                }
+                            } catch (Exception e) {
+                                Toast.makeText(requireContext(), "Decryption failed", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     @Override

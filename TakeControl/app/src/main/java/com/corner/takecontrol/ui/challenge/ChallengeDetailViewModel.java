@@ -397,6 +397,21 @@ public class ChallengeDetailViewModel extends ViewModel {
         });
     }
 
+    public void kickMember(String memberUid) {
+        if (challengeId == null) return;
+        challengeRepository.kickMember(challengeId, memberUid, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                actionComplete.setValue(true);
+            }
+
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+            }
+        });
+    }
+
     public void archiveChallenge() {
         if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();

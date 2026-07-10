@@ -51,6 +51,9 @@ public class HomeFragment extends Fragment {
         binding.joinFab.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.action_home_to_join));
 
+        binding.exploreFab.setOnClickListener(v ->
+                Navigation.findNavController(v).navigate(R.id.action_home_to_explore));
+
         binding.templatesFab.setOnClickListener(v -> {
             TemplatesDialogFragment dialog = new TemplatesDialogFragment();
             dialog.setOnTemplateSelectedListener(template -> {

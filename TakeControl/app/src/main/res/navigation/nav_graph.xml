@@ -47,6 +47,9 @@
         <action
             android:id="@+id/action_home_to_detail"
             app:destination="@id/challengeDetailFragment" />
+        <action
+            android:id="@+id/action_home_to_explore"
+            app:destination="@id/exploreFragment" />
     </fragment>
 
     <fragment
@@ -79,5 +82,14 @@
         <action
             android:id="@+id/action_detail_to_edit"
             app:destination="@id/createChallengeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/exploreFragment"
+        android:name="com.corner.takecontrol.ui.challenge.ExploreFragment"
+        android:label="Explore Challenges">
+        <action
+            android:id="@+id/action_explore_to_detail"
+            app:destination="@id/challengeDetailFragment" />
     </fragment>
 </navigation>

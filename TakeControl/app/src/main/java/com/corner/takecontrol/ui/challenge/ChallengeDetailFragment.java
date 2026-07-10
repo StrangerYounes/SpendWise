@@ -88,6 +88,14 @@ public class ChallengeDetailFragment extends Fragment {
                     viewModel.nudgeMember(entry.getUserId(), entry.getDisplayName());
                     Toast.makeText(requireContext(), "Nudge sent!", Toast.LENGTH_SHORT).show();
                 });
+        leaderboardAdapter.setOnKickListener(entry -> {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Kick Member")
+                    .setMessage("Are you sure you want to remove " + entry.getDisplayName() + " from this challenge?")
+                    .setPositiveButton("Kick", (d, w) -> viewModel.kickMember(entry.getUserId()))
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        });
 
         binding.tasksRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.tasksRecyclerView.setAdapter(taskAdapter);
@@ -161,6 +169,8 @@ public class ChallengeDetailFragment extends Fragment {
         String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
                 ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
         boolean isCreator = currentUserId.equals(challenge.getCreatedBy());
+
+        leaderboardAdapter.setOwner(isCreator);
 
         binding.completedBanner.setVisibility(status == ChallengeStatus.COMPLETED ? View.VISIBLE : View.GONE);
         binding.draftActionsLayout.setVisibility(status == ChallengeStatus.DRAFT ? View.VISIBLE : View.GONE);

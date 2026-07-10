@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.Challenge;
 import com.corner.takecontrol.databinding.FragmentCreateChallengeBinding;
+import com.corner.takecontrol.util.SecurityUtil;
 import com.google.android.material.chip.Chip;
 
 public class CreateChallengeFragment extends Fragment {
@@ -57,6 +58,10 @@ public class CreateChallengeFragment extends Fragment {
         setupReordering();
         setupDurationChips();
 
+        binding.publicSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            binding.passwordInputLayout.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+        });
+
         binding.addTaskButton.setOnClickListener(v -> {
             AddTaskDialogFragment dialog = new AddTaskDialogFragment();
             dialog.setTaskAddedListener(task -> {
@@ -65,20 +70,24 @@ public class CreateChallengeFragment extends Fragment {
             dialog.show(getChildFragmentManager(), "AddTask");
         });
 
-        binding.saveChallengeButton.setOnClickListener(v -> {
+            binding.saveChallengeButton.setOnClickListener(v -> {
             String title = binding.titleInput.getText() != null ? binding.titleInput.getText().toString().trim() : "";
             String description = binding.descriptionInput.getText() != null ? binding.descriptionInput.getText().toString().trim() : "";
             int duration = getSelectedDuration();
-            
+
             int maxSkips = 0;
             String skipsStr = binding.maxSkipsInput.getText() != null ? binding.maxSkipsInput.getText().toString() : "";
             if (!skipsStr.isEmpty()) {
                 try {
                     maxSkips = Integer.parseInt(skipsStr);
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
 
-            viewModel.createChallenge(title, description, duration, maxSkips);
+            boolean isPublic = binding.publicSwitch.isChecked();
+            String password = binding.passwordInput.getText() != null ? binding.passwordInput.getText().toString() : "";
+
+            viewModel.createChallenge(title, description, duration, maxSkips, isPublic, password);
         });
 
         viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
@@ -125,7 +134,17 @@ public class CreateChallengeFragment extends Fragment {
         binding.titleInput.setText(challenge.getTitle());
         binding.descriptionInput.setText(challenge.getDescription());
         binding.maxSkipsInput.setText(String.valueOf(challenge.getMaxSkips()));
-        
+
+        binding.publicSwitch.setChecked(challenge.isPublic());
+        binding.passwordInputLayout.setVisibility(challenge.isPublic() ? View.GONE : View.VISIBLE);
+        if (!challenge.isPublic() && challenge.getEncryptedPassword() != null) {
+            try {
+                binding.passwordInput.setText(SecurityUtil.decrypt(challenge.getEncryptedPassword()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         int duration = challenge.getDurationDays();
         if (duration == 7) binding.chip7.setChecked(true);
         else if (duration == 30) binding.chip30.setChecked(true);

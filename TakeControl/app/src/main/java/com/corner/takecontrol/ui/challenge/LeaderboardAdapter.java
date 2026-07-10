@@ -23,13 +23,28 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         void onNudge(LeaderboardEntry entry);
     }
 
+    public interface OnKickListener {
+        void onKick(LeaderboardEntry entry);
+    }
+
     private final List<LeaderboardEntry> entries = new ArrayList<>();
     private final String currentUserId;
     private final OnNudgeListener nudgeListener;
+    private OnKickListener kickListener;
+    private boolean isOwner = false;
 
     public LeaderboardAdapter(String currentUserId, OnNudgeListener nudgeListener) {
         this.currentUserId = currentUserId;
         this.nudgeListener = nudgeListener;
+    }
+
+    public void setOnKickListener(OnKickListener kickListener) {
+        this.kickListener = kickListener;
+    }
+
+    public void setOwner(boolean owner) {
+        isOwner = owner;
+        notifyDataSetChanged();
     }
 
     public void submitList(List<LeaderboardEntry> list) {
@@ -90,6 +105,15 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         } else {
             holder.nudgeButton.setVisibility(View.GONE);
         }
+
+        if (isOwner && !isCurrentUser) {
+            holder.kickButton.setVisibility(View.VISIBLE);
+            holder.kickButton.setOnClickListener(v -> {
+                if (kickListener != null) kickListener.onKick(entry);
+            });
+        } else {
+            holder.kickButton.setVisibility(View.GONE);
+        }
     }
 
     private int getRankColorRes(int rank) {
@@ -117,6 +141,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         final TextView percentText;
         final LinearProgressIndicator progressBar;
         final View nudgeButton;
+        final View kickButton;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -126,6 +151,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
             percentText = itemView.findViewById(R.id.percentText);
             progressBar = itemView.findViewById(R.id.progressBar);
             nudgeButton = itemView.findViewById(R.id.nudgeButton);
+            kickButton = itemView.findViewById(R.id.kickButton);
         }
     }
 }

@@ -33,13 +33,15 @@ public class ChallengeRepository {
     }
 
     public void createChallenge(String userId, String title, String description, int durationDays, int maxSkips,
-                                RepositoryCallback<String> callback) {
+                                boolean isPublic, String encryptedPassword, RepositoryCallback<String> callback) {
         Challenge challenge = new Challenge();
         challenge.setTitle(title);
         challenge.setDescription(description);
         challenge.setCreatedBy(userId);
         challenge.setDurationDays(durationDays);
         challenge.setMaxSkips(maxSkips);
+        challenge.setPublic(isPublic);
+        challenge.setEncryptedPassword(encryptedPassword);
         challenge.setStatusEnum(ChallengeStatus.DRAFT);
         List<String> members = new ArrayList<>();
         members.add(userId);
@@ -217,6 +219,13 @@ public class ChallengeRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    public void kickMember(String challengeId, String memberUid, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .update("memberIds", com.google.firebase.firestore.FieldValue.arrayRemove(memberUid))
+                .addOnSuccessListener(unused -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void archiveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
@@ -253,10 +262,34 @@ public class ChallengeRepository {
                         callback.onSuccess(doc.getId());
                         return;
                     }
-                    firestore.collection(COLLECTION_CHALLENGES).document(doc.getId())
-                            .update("memberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
-                            .addOnSuccessListener(unused -> callback.onSuccess(doc.getId()))
-                            .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                    
+                    // Return the challenge object to check for password requirement in the UI
+                    callback.onSuccess("CHECK_PASSWORD:" + doc.getId());
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void joinChallenge(String userId, String challengeId, RepositoryCallback<String> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .update("memberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
+                .addOnSuccessListener(unused -> callback.onSuccess(challengeId))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void getPublicChallenges(String userId, RepositoryCallback<List<Challenge>> callback) {
+        firestore.collection(COLLECTION_CHALLENGES)
+                .whereEqualTo("isPublic", true)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Challenge> challenges = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        Challenge challenge = doc.toObject(Challenge.class);
+                        if (challenge.getMemberIds() != null && !challenge.getMemberIds().contains(userId)) {
+                            challenge.setId(doc.getId());
+                            challenges.add(challenge);
+                        }
+                    }
+                    callback.onSuccess(challenges);
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }

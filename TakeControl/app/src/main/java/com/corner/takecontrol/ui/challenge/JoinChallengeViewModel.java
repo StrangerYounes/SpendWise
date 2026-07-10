@@ -31,6 +31,10 @@ public class JoinChallengeViewModel extends ViewModel {
         return joinedChallengeId;
     }
 
+    public void consumeJoinedChallengeId() {
+        joinedChallengeId.setValue(null);
+    }
+
     public void joinChallenge(String shareCode) {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             error.setValue("You must be signed in");
@@ -45,9 +49,50 @@ public class JoinChallengeViewModel extends ViewModel {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         challengeRepository.joinByShareCode(userId, shareCode, new RepositoryCallback<>() {
             @Override
-            public void onSuccess(String challengeId) {
+            public void onSuccess(String result) {
+                if (result.startsWith("CHECK_PASSWORD:")) {
+                    String id = result.substring("CHECK_PASSWORD:".length());
+                    challengeRepository.getChallenge(id, new RepositoryCallback<>() {
+                        @Override
+                        public void onSuccess(com.corner.takecontrol.data.model.Challenge challenge) {
+                            loading.setValue(false);
+                            if (challenge.getEncryptedPassword() == null || challenge.getEncryptedPassword().isEmpty()) {
+                                confirmJoin(id);
+                            } else {
+                                joinedChallengeId.setValue(result); // Pass the raw result to UI to trigger password dialog
+                            }
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            loading.setValue(false);
+                            error.setValue(message);
+                        }
+                    });
+                } else {
+                    loading.setValue(false);
+                    joinedChallengeId.setValue(result);
+                }
+            }
+
+            @Override
+            public void onError(String message) {
                 loading.setValue(false);
-                joinedChallengeId.setValue(challengeId);
+                error.setValue(message);
+            }
+        });
+    }
+
+    public void confirmJoin(String challengeId) {
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId == null) return;
+
+        loading.setValue(true);
+        challengeRepository.joinChallenge(userId, challengeId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(String result) {
+                loading.setValue(false);
+                joinedChallengeId.setValue(result);
             }
 
             @Override

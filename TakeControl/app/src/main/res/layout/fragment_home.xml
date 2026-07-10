@@ -69,6 +69,17 @@
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/exploreFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="8dp"
+        android:text="Explore"
+        app:icon="@drawable/ic_join"
+        app:layout_constraintBottom_toTopOf="@id/templatesFab"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/templatesFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

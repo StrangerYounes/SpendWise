@@ -2,6 +2,7 @@ package com.corner.takecontrol.data.model;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
 
 import java.util.ArrayList;
@@ -23,6 +24,8 @@ public class Challenge {
     private List<String> archivedMemberIds = new ArrayList<>();
     private int maxSkips;
     private java.util.Map<String, Integer> memberSkips = new java.util.HashMap<>();
+    private boolean isPublic = true;
+    private String encryptedPassword;
 
     @ServerTimestamp
     private Timestamp createdAt;
@@ -152,5 +155,23 @@ public class Challenge {
 
     public int getMemberCount() {
         return memberIds != null ? memberIds.size() : 0;
+    }
+
+    @PropertyName("isPublic")
+    public boolean isPublic() {
+        return isPublic;
+    }
+
+    @PropertyName("isPublic")
+    public void setPublic(boolean aPublic) {
+        isPublic = aPublic;
+    }
+
+    public String getEncryptedPassword() {
+        return encryptedPassword;
+    }
+
+    public void setEncryptedPassword(String encryptedPassword) {
+        this.encryptedPassword = encryptedPassword;
     }
 }
