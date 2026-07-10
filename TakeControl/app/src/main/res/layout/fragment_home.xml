@@ -68,6 +68,15 @@
             android:textSize="15sp" />
     </LinearLayout>
 
+    <!-- Scrim for FAB Menu -->
+    <View
+        android:id="@+id/fabScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="#99000000"
+        android:visibility="gone" />
+
     <!-- Sub-FABs for the Speed Dial menu -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/statisticsFab"

@@ -49,6 +49,9 @@ public class HomeFragment extends Fragment {
 
         // Speed Dial FAB Logic
         binding.mainFab.setOnClickListener(v -> toggleMenu());
+        binding.fabScrim.setOnClickListener(v -> {
+            if (isMenuExpanded) toggleMenu();
+        });
 
         binding.createFab.setOnClickListener(v -> {
             toggleMenu();
@@ -170,27 +173,99 @@ public class HomeFragment extends Fragment {
     }
 
     private void toggleMenu() {
+        if (binding == null) return;
         isMenuExpanded = !isMenuExpanded;
 
-        int visibility = isMenuExpanded ? View.VISIBLE : View.GONE;
-        binding.createFab.setVisibility(visibility);
-        binding.joinFab.setVisibility(visibility);
-        binding.exploreFab.setVisibility(visibility);
-        binding.templatesFab.setVisibility(visibility);
-        binding.customizationFab.setVisibility(visibility);
-        
-        if (com.corner.takecontrol.FeatureFlags.STATISTICS_UI_ENABLED) {
-            binding.statisticsFab.setVisibility(visibility);
+        final View mainFab = binding.mainFab;
+        final View scrim = binding.fabScrim;
+
+        // Animate the main FAB rotation
+        float rotation = isMenuExpanded ? 45f : 0f;
+        mainFab.animate().rotation(rotation).setDuration(300).start();
+
+        // Animate the scrim
+        if (isMenuExpanded) {
+            scrim.setVisibility(View.VISIBLE);
+            scrim.animate().alpha(1f).setDuration(300).start();
         } else {
-            binding.statisticsFab.setVisibility(View.GONE);
+            scrim.animate().alpha(0f).setDuration(300).withEndAction(() -> {
+                if (binding != null) scrim.setVisibility(View.GONE);
+            }).start();
         }
 
-        float rotation = isMenuExpanded ? 45f : 0f;
-        binding.mainFab.animate().rotation(rotation).setDuration(200).start();
+        // Sub-FABs list for staggered animation
+        View[] subFabs = {
+                binding.joinFab,
+                binding.createFab,
+                binding.templatesFab,
+                binding.exploreFab,
+                binding.customizationFab,
+                binding.statisticsFab
+        };
+
+        for (int i = 0; i < subFabs.length; i++) {
+            final View fab = subFabs[i];
+
+            // Special handling for statisticsFab if feature flag is off
+            if (fab == binding.statisticsFab && !com.corner.takecontrol.FeatureFlags.STATISTICS_UI_ENABLED) {
+                fab.setVisibility(View.GONE);
+                continue;
+            }
+
+            if (isMenuExpanded) {
+                fab.setVisibility(View.VISIBLE);
+                fab.setAlpha(0f);
+                fab.setScaleX(0.8f);
+                fab.setScaleY(0.8f);
+                fab.setTranslationY(40f);
+
+                // Horizontal staggering for a "fan" or "zig-zag" effect
+                float translationX = (i % 2 == 0) ? -30f : 10f;
+                fab.setTranslationX(translationX);
+
+                fab.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .translationY(0f)
+                        .translationX(0f)
+                        .setDuration(300)
+                        .setStartDelay(i * 50L)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                        .start();
+            } else {
+                fab.animate()
+                        .alpha(0f)
+                        .scaleX(0.8f)
+                        .scaleY(0.8f)
+                        .translationY(40f)
+                        .setDuration(250)
+                        .setStartDelay(0)
+                        .withEndAction(() -> {
+                            // Using the captured 'fab' reference is safe,
+                            // but we check binding just to be sure we're still in a valid state
+                            if (binding != null) fab.setVisibility(View.GONE);
+                        })
+                        .start();
+            }
+        }
+
+        // Add haptic feedback
+        mainFab.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
     }
 
     @Override
     public void onDestroyView() {
+        if (binding != null) {
+            binding.mainFab.animate().cancel();
+            binding.fabScrim.animate().cancel();
+            binding.createFab.animate().cancel();
+            binding.joinFab.animate().cancel();
+            binding.exploreFab.animate().cancel();
+            binding.templatesFab.animate().cancel();
+            binding.customizationFab.animate().cancel();
+            binding.statisticsFab.animate().cancel();
+        }
         super.onDestroyView();
         binding = null;
     }
