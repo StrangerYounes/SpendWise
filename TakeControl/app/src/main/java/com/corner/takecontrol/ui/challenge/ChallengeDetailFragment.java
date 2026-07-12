@@ -33,6 +33,7 @@ public class ChallengeDetailFragment extends Fragment {
     private ChallengeDetailViewModel viewModel;
     private ChallengeTaskAdapter taskAdapter;
     private LeaderboardAdapter leaderboardAdapter;
+    private ChallengeFeedAdapter feedAdapter;
 
     @Nullable
     @Override
@@ -107,6 +108,18 @@ public class ChallengeDetailFragment extends Fragment {
         binding.leaderboardRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.leaderboardRecyclerView.setAdapter(leaderboardAdapter);
 
+        feedAdapter = new ChallengeFeedAdapter();
+        binding.feedRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.feedRecyclerView.setAdapter(feedAdapter);
+
+        binding.postButton.setOnClickListener(v -> {
+            String content = binding.postInput.getText().toString().trim();
+            if (!content.isEmpty()) {
+                viewModel.postToFeed(content);
+                binding.postInput.setText("");
+            }
+        });
+
         binding.startButton.setOnClickListener(v -> viewModel.startChallenge());
         binding.skipButton.setOnClickListener(v -> {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
@@ -130,6 +143,10 @@ public class ChallengeDetailFragment extends Fragment {
             }
         });
         viewModel.getLeaderboard().observe(getViewLifecycleOwner(), this::renderLeaderboard);
+        viewModel.getFeed().observe(getViewLifecycleOwner(), posts -> {
+            feedAdapter.submitList(posts);
+            binding.feedRecyclerView.setVisibility(posts == null || posts.isEmpty() ? View.GONE : View.VISIBLE);
+        });
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();

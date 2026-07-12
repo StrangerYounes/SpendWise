@@ -153,6 +153,7 @@ public class Challenge {
         this.createdAt = createdAt;
     }
 
+    @com.google.firebase.firestore.Exclude
     public int getMemberCount() {
         return memberIds != null ? memberIds.size() : 0;
     }

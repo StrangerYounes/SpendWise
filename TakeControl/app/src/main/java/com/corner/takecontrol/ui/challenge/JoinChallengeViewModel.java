@@ -114,6 +114,7 @@ public class JoinChallengeViewModel extends ViewModel {
                         challengeRepository.joinChallenge(userId, challengeId, new RepositoryCallback<>() {
                             @Override
                             public void onSuccess(String result) {
+                                postJoinToFeed(challengeId, profile);
                                 loading.setValue(false);
                                 joinedChallengeId.setValue(result);
                             }
@@ -140,5 +141,14 @@ public class JoinChallengeViewModel extends ViewModel {
                 error.setValue(message);
             }
         });
+    }
+
+    private void postJoinToFeed(String challengeId, com.corner.takecontrol.data.model.UserProfile profile) {
+        com.corner.takecontrol.data.model.ChallengePost post = new com.corner.takecontrol.data.model.ChallengePost(
+                challengeId, profile.getId(), profile.getDisplayName(), "joined the challenge!", "STATUS"
+        );
+        post.setUserEncryptedPhoto(profile.getEncryptedPhoto());
+        post.setUserPhotoUrl(profile.getPhotoUrl());
+        challengeRepository.postToChallengeFeed(challengeId, post, null);
     }
 }

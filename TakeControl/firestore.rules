@@ -15,6 +15,16 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/challenges/$(challengeId)).data;
     }
 
+    function isMember(challengeId) {
+      let challenge = getChallenge(challengeId);
+      return request.auth.uid == challenge.createdBy ||
+             request.auth.uid in challenge.get('memberIds', []);
+    }
+
+    function isPublic(challengeId) {
+      return getChallenge(challengeId).get('isPublic', false) == true;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create, update: if isUser(userId);
@@ -62,11 +72,7 @@ service cloud.firestore {
 
       match /tasks/{taskId} {
         // Only members, creators, or those looking at public challenges can read tasks.
-        allow read: if isSignedIn() && (
-          request.auth.uid == getChallenge(challengeId).createdBy ||
-          request.auth.uid in getChallenge(challengeId).memberIds ||
-          getChallenge(challengeId).isPublic == true
-        );
+        allow read: if isSignedIn() && (isMember(challengeId) || isPublic(challengeId));
 
         allow write: if isSignedIn()
                      && request.auth.uid == getChallenge(challengeId).createdBy
@@ -74,17 +80,16 @@ service cloud.firestore {
       }
 
       match /progress/{progressId} {
-        allow read: if isSignedIn() && (
-          request.auth.uid == getChallenge(challengeId).createdBy ||
-          request.auth.uid in getChallenge(challengeId).memberIds
-        );
+        allow read: if isSignedIn() && isMember(challengeId);
 
         allow create, update: if isSignedIn()
           && request.resource.data.userId == request.auth.uid
-          && (
-            request.auth.uid == getChallenge(challengeId).createdBy ||
-            request.auth.uid in getChallenge(challengeId).memberIds
-          );
+          && isMember(challengeId);
+      }
+
+      match /feed/{postId} {
+        allow read: if isSignedIn() && (isMember(challengeId) || isPublic(challengeId));
+        allow create: if isSignedIn() && isMember(challengeId);
       }
     }
 

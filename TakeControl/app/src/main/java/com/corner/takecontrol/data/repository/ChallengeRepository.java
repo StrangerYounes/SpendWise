@@ -25,6 +25,7 @@ public class ChallengeRepository {
     private static final String COLLECTION_CHALLENGES = "challenges";
     private static final String SUBCOLLECTION_TASKS = "tasks";
     private static final String SUBCOLLECTION_PROGRESS = "progress";
+    private static final String SUBCOLLECTION_FEED = "feed";
 
     private final FirebaseFirestore firestore;
 
@@ -453,6 +454,40 @@ public class ChallengeRepository {
                         }
                     }
                     if (callback != null) callback.onSuccess(progressList);
+                });
+    }
+
+    public void postToChallengeFeed(String challengeId, com.corner.takecontrol.data.model.ChallengePost post, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .collection(SUBCOLLECTION_FEED)
+                .add(post)
+                .addOnSuccessListener(ref -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public ListenerRegistration listenToChallengeFeed(String challengeId, RepositoryCallback<List<com.corner.takecontrol.data.model.ChallengePost>> callback) {
+        return firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .collection(SUBCOLLECTION_FEED)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(50)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        if (callback != null) callback.onError(error.getMessage());
+                        return;
+                    }
+                    List<com.corner.takecontrol.data.model.ChallengePost> posts = new ArrayList<>();
+                    if (snapshot != null) {
+                        for (QueryDocumentSnapshot doc : snapshot) {
+                            com.corner.takecontrol.data.model.ChallengePost post = doc.toObject(com.corner.takecontrol.data.model.ChallengePost.class);
+                            post.setId(doc.getId());
+                            posts.add(post);
+                        }
+                    }
+                    if (callback != null) callback.onSuccess(posts);
                 });
     }
 }

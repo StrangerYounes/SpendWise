@@ -32,6 +32,7 @@ public class ChallengeDetailViewModel extends ViewModel {
     private final MutableLiveData<List<TaskProgress>> progressList = new MutableLiveData<>();
     private final MutableLiveData<Integer> completionPercent = new MutableLiveData<>(0);
     private final MutableLiveData<List<LeaderboardEntry>> leaderboard = new MutableLiveData<>();
+    private final MutableLiveData<List<com.corner.takecontrol.data.model.ChallengePost>> feed = new MutableLiveData<>();
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> shareCode = new MutableLiveData<>();
     private final MutableLiveData<Boolean> actionComplete = new MutableLiveData<>();
@@ -40,6 +41,7 @@ public class ChallengeDetailViewModel extends ViewModel {
     private ListenerRegistration challengeListener;
     private ListenerRegistration tasksListener;
     private ListenerRegistration progressListener;
+    private ListenerRegistration feedListener;
     private String challengeId;
 
     public ChallengeDetailViewModel() {
@@ -47,37 +49,15 @@ public class ChallengeDetailViewModel extends ViewModel {
         userRepository = new UserRepository();
     }
 
-    public LiveData<Challenge> getChallenge() {
-        return challenge;
-    }
-
-    public LiveData<List<ChallengeTask>> getTasks() {
-        return tasks;
-    }
-
-    public LiveData<List<TaskProgress>> getProgressList() {
-        return progressList;
-    }
-
-    public LiveData<Integer> getCompletionPercent() {
-        return completionPercent;
-    }
-
-    public LiveData<List<LeaderboardEntry>> getLeaderboard() {
-        return leaderboard;
-    }
-
-    public LiveData<String> getError() {
-        return error;
-    }
-
-    public LiveData<String> getShareCode() {
-        return shareCode;
-    }
-
-    public LiveData<Boolean> getChallengeDeleted() {
-        return challengeDeleted;
-    }
+    public LiveData<Challenge> getChallenge() { return challenge; }
+    public LiveData<List<ChallengeTask>> getTasks() { return tasks; }
+    public LiveData<List<TaskProgress>> getProgressList() { return progressList; }
+    public LiveData<Integer> getCompletionPercent() { return completionPercent; }
+    public LiveData<List<LeaderboardEntry>> getLeaderboard() { return leaderboard; }
+    public LiveData<List<com.corner.takecontrol.data.model.ChallengePost>> getFeed() { return feed; }
+    public LiveData<String> getError() { return error; }
+    public LiveData<String> getShareCode() { return shareCode; }
+    public LiveData<Boolean> getChallengeDeleted() { return challengeDeleted; }
 
     public void load(String challengeId) {
         this.challengeId = challengeId;
@@ -90,11 +70,7 @@ public class ChallengeDetailViewModel extends ViewModel {
                 updateCompletion();
                 maybeRefreshLeaderboard();
             }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onError(String message) { error.setValue(message); }
         });
 
         tasksListener = challengeRepository.listenToTasks(challengeId, new RepositoryCallback<>() {
@@ -104,11 +80,7 @@ public class ChallengeDetailViewModel extends ViewModel {
                 updateCompletion();
                 maybeRefreshLeaderboard();
             }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onError(String message) { error.setValue(message); }
         });
 
         progressListener = challengeRepository.listenToProgress(challengeId, new RepositoryCallback<>() {
@@ -118,10 +90,18 @@ public class ChallengeDetailViewModel extends ViewModel {
                 updateCompletion();
                 maybeRefreshLeaderboard();
             }
+            @Override public void onError(String message) { error.setValue(message); }
+        });
 
+        feedListener = challengeRepository.listenToChallengeFeed(challengeId, new RepositoryCallback<>() {
+            @Override
+            public void onSuccess(List<com.corner.takecontrol.data.model.ChallengePost> result) {
+                feed.setValue(result);
+            }
             @Override
             public void onError(String message) {
-                error.setValue(message);
+                android.util.Log.e("ChallengeDetailVM", "Feed error: " + message);
+                feed.setValue(new java.util.ArrayList<>());
             }
         });
     }
@@ -142,14 +122,8 @@ public class ChallengeDetailViewModel extends ViewModel {
                 && ProgressCalculator.shouldMarkChallengeCompleted(current, currentTasks, currentProgress, userId)) {
             challengeRepository.completeChallenge(challengeId, new RepositoryCallback<>() {
                 @Override
-                public void onSuccess(Void result) {
-                    actionComplete.setValue(true);
-                }
-
-                @Override
-                public void onError(String message) {
-                    error.setValue(message);
-                }
+                public void onSuccess(Void result) { actionComplete.setValue(true); }
+                @Override public void onError(String message) { error.setValue(message); }
             });
         }
     }
@@ -171,19 +145,13 @@ public class ChallengeDetailViewModel extends ViewModel {
             public void onSuccess(Map<String, UserProfile> profiles) {
                 leaderboard.setValue(ProgressCalculator.buildLeaderboard(current, currentTasks, currentProgress, profiles));
             }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
     public void startChallenge() {
         Challenge current = challenge.getValue();
-        if (current == null || challengeId == null) {
-            return;
-        }
+        if (current == null || challengeId == null) return;
         if (tasks.getValue() == null || tasks.getValue().isEmpty()) {
             error.setValue("Add at least one task before starting");
             return;
@@ -192,21 +160,15 @@ public class ChallengeDetailViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 actionComplete.setValue(true);
+                postToFeed("started the challenge!");
             }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
     public void saveProgress(TaskProgress progress) {
-        if (challengeId == null) {
-            return;
-        }
+        if (challengeId == null) return;
 
-        // Find existing progress to check for completion state change
         TaskProgress oldProgress = null;
         List<TaskProgress> currentList = progressList.getValue();
         if (currentList != null) {
@@ -236,25 +198,17 @@ public class ChallengeDetailViewModel extends ViewModel {
 
                 if (!wasCompleted && isNowCompleted) {
                     userRepository.rewardTaskCompletion(userId, task, isNowLate, new RepositoryCallback<>() {
-                        @Override
-                        public void onSuccess(Void result) {}
-                        @Override
-                        public void onError(String message) {}
+                        @Override public void onSuccess(Void result) { postProgressToFeed(task, isNowLate); }
+                        @Override public void onError(String message) {}
                     });
                 } else if (wasCompleted && !isNowCompleted) {
                     userRepository.deductTaskCompletion(userId, task, wasLate, new RepositoryCallback<>() {
-                        @Override
-                        public void onSuccess(Void result) {}
-                        @Override
-                        public void onError(String message) {}
+                        @Override public void onSuccess(Void result) {}
+                        @Override public void onError(String message) {}
                     });
                 }
             }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
@@ -262,9 +216,7 @@ public class ChallengeDetailViewModel extends ViewModel {
         List<ChallengeTask> currentTasks = tasks.getValue();
         if (currentTasks != null) {
             for (ChallengeTask task : currentTasks) {
-                if (task.getId().equals(taskId)) {
-                    return task;
-                }
+                if (task.getId().equals(taskId)) return task;
             }
         }
         return null;
@@ -272,23 +224,14 @@ public class ChallengeDetailViewModel extends ViewModel {
 
     public void shareChallenge() {
         Challenge current = challenge.getValue();
-        if (current == null || challengeId == null) {
-            return;
-        }
+        if (current == null || challengeId == null) return;
         if (current.getShareCode() != null && !current.getShareCode().isEmpty()) {
             shareCode.setValue(current.getShareCode());
             return;
         }
         challengeRepository.generateShareCode(challengeId, new RepositoryCallback<>() {
-            @Override
-            public void onSuccess(String result) {
-                shareCode.setValue(result);
-            }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onSuccess(String result) { shareCode.setValue(result); }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
@@ -302,29 +245,15 @@ public class ChallengeDetailViewModel extends ViewModel {
                 String fromName = fromProfile != null ? fromProfile.getDisplayName() : "Someone";
                 String message = String.format(java.util.Locale.US, "%s nudged you!", fromName);
                 AppNotification notification = new AppNotification(toUserId, fromUserId, fromName, "NUDGE", message, challengeId);
-
-                userRepository.sendNotification(toUserId, notification, new RepositoryCallback<>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                    }
-                    @Override
-                    public void onError(String message) {
-                        error.setValue(message);
-                    }
-                });
+                userRepository.sendNotification(toUserId, notification, null);
             }
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
     public void useSkipDay() {
         Challenge current = challenge.getValue();
-        if (current == null || challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) {
-            return;
-        }
+        if (current == null || challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         
         int skipsUsed = current.getMemberSkips() != null ? current.getMemberSkips().getOrDefault(userId, 0) : 0;
@@ -333,51 +262,31 @@ public class ChallengeDetailViewModel extends ViewModel {
             return;
         }
 
-        // Mark ALL tasks for today as skipped (completed with a special status)
         List<ChallengeTask> currentTasks = tasks.getValue();
         if (currentTasks == null) return;
 
         for (ChallengeTask task : currentTasks) {
             String periodKey = com.corner.takecontrol.util.PeriodKeyUtil.getCurrentPeriodKey(task.getFrequencyEnum());
             TaskProgress p = new TaskProgress(userId, task.getId(), periodKey, task.getTargetValue(), true, "SKIPPED");
-            challengeRepository.saveProgress(challengeId, p, new RepositoryCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {}
-                @Override
-                public void onError(String message) {}
-            });
+            challengeRepository.saveProgress(challengeId, p, null);
         }
 
-        // Increment skip count
         java.util.Map<String, Integer> skipsMap = current.getMemberSkips();
         if (skipsMap == null) skipsMap = new java.util.HashMap<>();
         skipsMap.put(userId, skipsUsed + 1);
         current.setMemberSkips(skipsMap);
 
         challengeRepository.updateChallenge(challengeId, current, new RepositoryCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                actionComplete.setValue(true);
-            }
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onSuccess(Void result) { actionComplete.setValue(true); }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
     public void deleteChallenge() {
         if (challengeId == null) return;
         challengeRepository.deleteChallenge(challengeId, new RepositoryCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                challengeDeleted.setValue(true);
-            }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onSuccess(Void result) { challengeDeleted.setValue(true); }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
@@ -385,30 +294,16 @@ public class ChallengeDetailViewModel extends ViewModel {
         if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         challengeRepository.leaveChallenge(challengeId, userId, new RepositoryCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                challengeDeleted.setValue(true);
-            }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onSuccess(Void result) { challengeDeleted.setValue(true); }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
     public void kickMember(String memberUid) {
         if (challengeId == null) return;
         challengeRepository.kickMember(challengeId, memberUid, new RepositoryCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                actionComplete.setValue(true);
-            }
-
-            @Override
-            public void onError(String message) {
-                error.setValue(message);
-            }
+            @Override public void onSuccess(Void result) { actionComplete.setValue(true); }
+            @Override public void onError(String message) { error.setValue(message); }
         });
     }
 
@@ -416,31 +311,58 @@ public class ChallengeDetailViewModel extends ViewModel {
         if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         challengeRepository.archiveChallenge(challengeId, userId, new RepositoryCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                challengeDeleted.setValue(true);
-            }
+            @Override public void onSuccess(Void result) { challengeDeleted.setValue(true); }
+            @Override public void onError(String message) { error.setValue(message); }
+        });
+    }
 
+    public void postToFeed(String content) {
+        if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        userRepository.getUserProfile(userId, new RepositoryCallback<UserProfile>() {
             @Override
-            public void onError(String message) {
-                error.setValue(message);
+            public void onSuccess(UserProfile profile) {
+                if (profile != null) {
+                    com.corner.takecontrol.data.model.ChallengePost post = new com.corner.takecontrol.data.model.ChallengePost(
+                            challengeId, userId, profile.getDisplayName(), content, "STATUS"
+                    );
+                    post.setUserEncryptedPhoto(profile.getEncryptedPhoto());
+                    post.setUserPhotoUrl(profile.getPhotoUrl());
+                    challengeRepository.postToChallengeFeed(challengeId, post, null);
+                }
             }
+            @Override public void onError(String message) {}
+        });
+    }
+
+    private void postProgressToFeed(ChallengeTask task, boolean isLate) {
+        if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        userRepository.getUserProfile(userId, new RepositoryCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                if (profile != null) {
+                    String content = String.format(java.util.Locale.US, "completed %s%s", 
+                            task.getTitle(), isLate ? " (late)" : "");
+                    com.corner.takecontrol.data.model.ChallengePost post = new com.corner.takecontrol.data.model.ChallengePost(
+                            challengeId, userId, profile.getDisplayName(), content, "PROGRESS"
+                    );
+                    post.setUserEncryptedPhoto(profile.getEncryptedPhoto());
+                    post.setUserPhotoUrl(profile.getPhotoUrl());
+                    challengeRepository.postToChallengeFeed(challengeId, post, null);
+                }
+            }
+            @Override public void onError(String message) {}
         });
     }
 
     private void removeListeners() {
-        if (challengeListener != null) {
-            challengeListener.remove();
-            challengeListener = null;
-        }
-        if (tasksListener != null) {
-            tasksListener.remove();
-            tasksListener = null;
-        }
-        if (progressListener != null) {
-            progressListener.remove();
-            progressListener = null;
-        }
+        if (challengeListener != null) { challengeListener.remove(); challengeListener = null; }
+        if (tasksListener != null) { tasksListener.remove(); tasksListener = null; }
+        if (progressListener != null) { progressListener.remove(); progressListener = null; }
+        if (feedListener != null) { feedListener.remove(); feedListener = null; }
     }
 
     @Override
