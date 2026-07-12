@@ -88,8 +88,10 @@ public class ChallengeDetailFragment extends Fragment {
                     viewModel.nudgeMember(entry.getUserId(), entry.getDisplayName());
                     Toast.makeText(requireContext(), "Nudge sent!", Toast.LENGTH_SHORT).show();
                 });
-        leaderboardAdapter.setOnProfileClickListener(() -> {
-            androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.action_detail_to_customization);
+        leaderboardAdapter.setOnProfileClickListener(userId -> {
+            Bundle args = new Bundle();
+            args.putString("userId", userId);
+            androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.action_detail_to_profile, args);
         });
         leaderboardAdapter.setOnKickListener(entry -> {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())

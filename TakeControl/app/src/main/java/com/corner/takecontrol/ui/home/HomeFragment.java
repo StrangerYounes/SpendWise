@@ -43,7 +43,7 @@ public class HomeFragment extends Fragment {
         setupMenu();
 
         adapter = new ChallengeAdapter(this::openChallenge);
-        adapter.setOnProfileClickListener(() -> Navigation.findNavController(requireView()).navigate(R.id.action_home_to_customization));
+        adapter.setOnProfileClickListener(() -> Navigation.findNavController(requireView()).navigate(R.id.action_home_to_profile));
         binding.challengesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.challengesRecyclerView.setAdapter(adapter);
 
@@ -70,7 +70,7 @@ public class HomeFragment extends Fragment {
 
         binding.customizationFab.setOnClickListener(v -> {
             toggleMenu();
-            Navigation.findNavController(v).navigate(R.id.action_home_to_customization);
+            Navigation.findNavController(v).navigate(R.id.action_home_to_profile);
         });
 
         binding.statisticsFab.setOnClickListener(v -> {

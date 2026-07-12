@@ -96,6 +96,22 @@ public final class ProgressionUtil {
         return id;
     }
 
+    public static String getAchievementName(String id) {
+        if (id == null) return "";
+        switch (id) {
+            case "EARLY_BIRD": return "Early Bird";
+            case "WEEKEND_WARRIOR": return "Weekend Warrior";
+            case "STREAK_7": return "7 Day Streak";
+            case "STREAK_30": return "30 Day Streak";
+            default: return id;
+        }
+    }
+
+    public static int getAchievementIconRes(String id) {
+        // For now, return a default icon for all
+        return com.corner.takecontrol.R.drawable.ic_streak;
+    }
+
     public static int getFrameColorRes(String frameId) {
         if (frameId == null) return com.corner.takecontrol.R.color.surface_variant;
         switch (frameId) {

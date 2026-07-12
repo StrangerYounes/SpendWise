@@ -28,7 +28,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
     }
 
     public interface OnProfileClickListener {
-        void onProfileClick();
+        void onProfileClick(String userId);
     }
 
     private final List<LeaderboardEntry> entries = new ArrayList<>();
@@ -104,8 +104,8 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
         }
 
         holder.profileImage.setOnClickListener(v -> {
-            if (isCurrentUser && profileClickListener != null) {
-                profileClickListener.onProfileClick();
+            if (profileClickListener != null) {
+                profileClickListener.onProfileClick(entry.getUserId());
             }
         });
 

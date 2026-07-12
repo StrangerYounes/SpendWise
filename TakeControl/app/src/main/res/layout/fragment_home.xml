@@ -96,7 +96,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="12dp"
-        android:text="@string/profile_customization"
+        android:text="My Profile"
         android:visibility="gone"
         app:icon="@drawable/ic_streak"
         app:layout_constraintBottom_toTopOf="@id/exploreFab"
