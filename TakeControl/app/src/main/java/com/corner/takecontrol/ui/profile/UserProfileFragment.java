@@ -108,7 +108,7 @@ public class UserProfileFragment extends Fragment {
         binding.profileImage.setOnClickListener(v -> showLargeImage(profile));
 
         int level = profile.getLevel();
-        binding.levelText.setText("Lvl " + level);
+        binding.levelText.setText(String.valueOf(level));
         
         long currentXp = profile.getXp();
         long xpForCurrentLevel = XpUtil.getXpForLevel(level);
