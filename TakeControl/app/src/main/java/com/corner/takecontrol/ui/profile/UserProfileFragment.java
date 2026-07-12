@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.corner.takecontrol.R;
+import com.corner.takecontrol.data.model.AppNotification;
 import com.corner.takecontrol.data.model.UserProfile;
 import com.corner.takecontrol.data.repository.RepositoryCallback;
 import com.corner.takecontrol.data.repository.UserRepository;
@@ -89,8 +90,107 @@ public class UserProfileFragment extends Fragment {
     }
 
     private void bindProfile(UserProfile profile) {
+        String currentUserId = FirebaseAuth.getInstance().getUid();
+        
         binding.displayNameText.setText(profile.getDisplayName());
         
+        if (currentUserId != null && !currentUserId.equals(profile.getId())) {
+            binding.cheerButton.setVisibility(View.VISIBLE);
+            binding.cheerButton.setOnClickListener(v -> {
+                userRepository.getUserProfile(currentUserId, new com.corner.takecontrol.data.repository.RepositoryCallback<UserProfile>() {
+                    @Override
+                    public void onSuccess(UserProfile myProfile) {
+                        String fromName = myProfile != null ? myProfile.getDisplayName() : "Someone";
+                        AppNotification cheer = new AppNotification(profile.getId(), currentUserId, fromName, "CHEER", fromName + " cheered for your progress!", null);
+                        userRepository.sendNotification(profile.getId(), cheer, null);
+                        Toast.makeText(requireContext(), "Cheer sent!", Toast.LENGTH_SHORT).show();
+                    }
+                    @Override public void onError(String message) {}
+                });
+            });
+
+            // To accurately show button state, we need to know if WE sent a request
+            userRepository.getUserProfile(currentUserId, new com.corner.takecontrol.data.repository.RepositoryCallback<UserProfile>() {
+                @Override
+                public void onSuccess(UserProfile myProfile) {
+                    if (!isAdded()) return;
+                    
+                    boolean isFriend = myProfile.getFriendIds() != null && myProfile.getFriendIds().contains(profile.getId());
+                    boolean alreadySent = myProfile.getSentRequestIds() != null && myProfile.getSentRequestIds().contains(profile.getId());
+
+                    binding.addFriendButton.setVisibility(View.VISIBLE);
+                    binding.addFriendButton.setEnabled(true);
+
+                    if (isFriend) {
+                        binding.addFriendButton.setText("Remove Friend");
+                        binding.addFriendButton.setEnabled(true);
+                        binding.addFriendButton.setOnClickListener(v -> {
+                            binding.addFriendButton.setEnabled(false);
+                            userRepository.removeFriend(currentUserId, profile.getId(), new com.corner.takecontrol.data.repository.RepositoryCallback<Void>() {
+                                @Override
+                                public void onSuccess(Void result) {
+                                    if (isAdded()) {
+                                        Toast.makeText(requireContext(), "Friend removed", Toast.LENGTH_SHORT).show();
+                                        loadProfile();
+                                    }
+                                }
+                                @Override public void onError(String message) {
+                                    if (isAdded()) {
+                                        binding.addFriendButton.setEnabled(true);
+                                        Toast.makeText(requireContext(), "Error: " + message, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                        });
+                    } else if (alreadySent) {
+                        binding.addFriendButton.setText("Undo Request");
+                        binding.addFriendButton.setOnClickListener(v -> {
+                            binding.addFriendButton.setEnabled(false);
+                            userRepository.cancelFriendRequest(currentUserId, profile.getId(), new com.corner.takecontrol.data.repository.RepositoryCallback<Void>() {
+                                @Override
+                                public void onSuccess(Void result) {
+                                    if (isAdded()) {
+                                        Toast.makeText(requireContext(), "Request cancelled", Toast.LENGTH_SHORT).show();
+                                        loadProfile(); // Refresh
+                                    }
+                                }
+                                @Override public void onError(String message) {
+                                    if (isAdded()) {
+                                        binding.addFriendButton.setEnabled(true);
+                                        Toast.makeText(requireContext(), "Error: " + message, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                        });
+                    } else {
+                        binding.addFriendButton.setText("Add Friend");
+                        binding.addFriendButton.setOnClickListener(v -> {
+                            binding.addFriendButton.setEnabled(false);
+                            userRepository.sendFriendRequest(currentUserId, myProfile.getDisplayName(), profile.getId(), new com.corner.takecontrol.data.repository.RepositoryCallback<Void>() {
+                                @Override
+                                public void onSuccess(Void result) {
+                                    if (isAdded()) {
+                                        Toast.makeText(requireContext(), "Friend request sent!", Toast.LENGTH_SHORT).show();
+                                        loadProfile(); // Refresh
+                                    }
+                                }
+                                @Override public void onError(String message) {
+                                    if (isAdded()) {
+                                        binding.addFriendButton.setEnabled(true);
+                                        Toast.makeText(requireContext(), "Error: " + message, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                        });
+                    }
+                }
+                @Override public void onError(String message) {}
+            });
+        } else {
+            binding.addFriendButton.setVisibility(View.GONE);
+            binding.cheerButton.setVisibility(View.GONE);
+        }
+
         String titleId = profile.getEquippedTitleId();
         if (titleId != null) {
             binding.equippedTitleText.setText(ProgressionUtil.getCosmeticName(titleId));

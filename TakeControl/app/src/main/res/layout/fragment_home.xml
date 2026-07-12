@@ -79,6 +79,18 @@
 
     <!-- Sub-FABs for the Speed Dial menu -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/socialFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="12dp"
+        android:text="Social"
+        android:visibility="gone"
+        app:icon="@drawable/ic_streak"
+        app:layout_constraintBottom_toTopOf="@id/leaderboardFab"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/leaderboardFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

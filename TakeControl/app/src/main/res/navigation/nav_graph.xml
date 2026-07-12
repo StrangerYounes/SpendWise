@@ -59,6 +59,18 @@
         <action
             android:id="@+id/action_home_to_leaderboard"
             app:destination="@id/leaderboardFragment" />
+        <action
+            android:id="@+id/action_home_to_social"
+            app:destination="@id/socialFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/socialFragment"
+        android:name="com.corner.takecontrol.ui.social.SocialFragment"
+        android:label="Social">
+        <action
+            android:id="@+id/action_social_to_profile"
+            app:destination="@id/userProfileFragment" />
     </fragment>
 
     <fragment

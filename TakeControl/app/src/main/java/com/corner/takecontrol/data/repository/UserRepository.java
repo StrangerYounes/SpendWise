@@ -292,6 +292,117 @@ public class UserRepository {
                 .update("read", true);
     }
 
+    public void searchUsers(String query, RepositoryCallback<List<UserProfile>> callback) {
+        if (query == null || query.trim().isEmpty()) {
+            callback.onSuccess(new ArrayList<>());
+            return;
+        }
+
+        String search = query.trim();
+        // Simple prefix search: startAt(search) and endAt(search + "\uf8ff")
+        firestore.collection("users")
+                .orderBy("displayName")
+                .startAt(search)
+                .endAt(search + "\uf8ff")
+                .limit(20)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<UserProfile> users = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        UserProfile profile = doc.toObject(UserProfile.class);
+                        profile.setId(doc.getId());
+                        users.add(profile);
+                    }
+                    callback.onSuccess(users);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void sendFriendRequest(String fromUserId, String fromUserName, String toUserId, RepositoryCallback<Void> callback) {
+        com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+
+        com.google.firebase.firestore.DocumentReference currentUserRef = firestore.collection("users").document(fromUserId);
+        com.google.firebase.firestore.DocumentReference notificationRef = firestore.collection("users").document(toUserId).collection("notifications").document();
+
+        AppNotification notification = new AppNotification(toUserId, fromUserId, fromUserName, "FRIEND_REQUEST", fromUserName + " sent you a friend request!", null);
+
+        batch.update(currentUserRef, "sentRequestIds", com.google.firebase.firestore.FieldValue.arrayUnion(toUserId));
+        batch.set(notificationRef, notification);
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void cancelFriendRequest(String fromUserId, String toUserId, RepositoryCallback<Void> callback) {
+        // First find the notification
+        firestore.collection("users").document(toUserId).collection("notifications")
+                .whereEqualTo("fromUserId", fromUserId)
+                .whereEqualTo("type", "FRIEND_REQUEST")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+                    
+                    // Remove from sender's sentRequestIds
+                    com.google.firebase.firestore.DocumentReference currentUserRef = firestore.collection("users").document(fromUserId);
+                    batch.update(currentUserRef, "sentRequestIds", com.google.firebase.firestore.FieldValue.arrayRemove(toUserId));
+                    
+                    // Delete the notification(s) in recipient's collection
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : snapshot.getDocuments()) {
+                        batch.delete(doc.getReference());
+                    }
+                    
+                    batch.commit()
+                            .addOnSuccessListener(v -> { if (callback != null) callback.onSuccess(null); })
+                            .addOnFailureListener(e -> { if (callback != null) callback.onError(e.getMessage()); });
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void acceptFriendRequest(String currentUserId, String friendUserId, String notificationId, RepositoryCallback<Void> callback) {
+        com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+
+        com.google.firebase.firestore.DocumentReference currentUserRef = firestore.collection("users").document(currentUserId);
+        com.google.firebase.firestore.DocumentReference friendUserRef = firestore.collection("users").document(friendUserId);
+        com.google.firebase.firestore.DocumentReference notificationRef = currentUserRef.collection("notifications").document(notificationId);
+
+        batch.update(currentUserRef, "friendIds", com.google.firebase.firestore.FieldValue.arrayUnion(friendUserId));
+        batch.update(friendUserRef, "friendIds", com.google.firebase.firestore.FieldValue.arrayUnion(currentUserId));
+        batch.delete(notificationRef);
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void removeFriend(String currentUserId, String friendUserId, RepositoryCallback<Void> callback) {
+        com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+
+        com.google.firebase.firestore.DocumentReference currentUserRef = firestore.collection("users").document(currentUserId);
+        com.google.firebase.firestore.DocumentReference friendUserRef = firestore.collection("users").document(friendUserId);
+
+        batch.update(currentUserRef, "friendIds", com.google.firebase.firestore.FieldValue.arrayRemove(friendUserId));
+        batch.update(friendUserRef, "friendIds", com.google.firebase.firestore.FieldValue.arrayRemove(currentUserId));
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
     public void getGlobalLeaderboard(String sortByField, int limit, RepositoryCallback<List<UserProfile>> callback) {
         firestore.collection("users")
                 .orderBy(sortByField, Query.Direction.DESCENDING)

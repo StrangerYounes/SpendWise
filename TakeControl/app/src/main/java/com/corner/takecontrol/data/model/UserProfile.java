@@ -34,6 +34,7 @@ public class UserProfile {
     private String university;
     private String company;
     private List<String> friendIds = new ArrayList<>();
+    private List<String> sentRequestIds = new ArrayList<>();
     private String flexedRankScope; // Global, Country, University, Company
     private String flexedRankTimeframe; // xp, weeklyXp, monthlyXp
     private boolean unlimitedChallengeSlots;
@@ -231,6 +232,14 @@ public class UserProfile {
 
     public void setFriendIds(List<String> friendIds) {
         this.friendIds = friendIds;
+    }
+
+    public List<String> getSentRequestIds() {
+        return sentRequestIds;
+    }
+
+    public void setSentRequestIds(List<String> sentRequestIds) {
+        this.sentRequestIds = sentRequestIds;
     }
 
     public String getFlexedRankScope() {
