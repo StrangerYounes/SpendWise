@@ -18,6 +18,8 @@ public class ChallengeTask {
     private String executionTime;
     private List<Integer> daysOfWeek;
     private String challengeId;
+    private String manualCategory;
+    private String manualAction;
 
     public ChallengeTask() {
     }
@@ -133,5 +135,21 @@ public class ChallengeTask {
 
     public void setChallengeId(String challengeId) {
         this.challengeId = challengeId;
+    }
+
+    public String getManualCategory() {
+        return manualCategory;
+    }
+
+    public void setManualCategory(String manualCategory) {
+        this.manualCategory = manualCategory;
+    }
+
+    public String getManualAction() {
+        return manualAction;
+    }
+
+    public void setManualAction(String manualAction) {
+        this.manualAction = manualAction;
     }
 }

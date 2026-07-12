@@ -1,9 +1,11 @@
 package com.corner.takecontrol.ui.profile;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,9 +17,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.corner.takecontrol.R;
 import com.corner.takecontrol.databinding.FragmentProfileCustomizationBinding;
 import com.corner.takecontrol.util.ProgressionUtil;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.yalantis.ucrop.UCrop;
 
 import java.io.File;
+import java.util.List;
 
 public class ProfileCustomizationFragment extends Fragment {
 
@@ -65,23 +70,17 @@ public class ProfileCustomizationFragment extends Fragment {
         options.setShowCropGrid(false);
         options.setCompressionFormat(android.graphics.Bitmap.CompressFormat.JPEG);
         options.setCompressionQuality(90);
-        
-        // Framing options: allow rotation and scaling
         options.setAllowedGestures(com.yalantis.ucrop.UCropActivity.SCALE, com.yalantis.ucrop.UCropActivity.ROTATE, com.yalantis.ucrop.UCropActivity.ALL);
-        
-        // Style it to match app
         options.setToolbarColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.primary));
         options.setStatusBarColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.primary_dark));
         options.setToolbarWidgetColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.white));
         options.setActiveControlsWidgetColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.secondary));
-
         cropImage.launch(uCrop.withOptions(options).getIntent(requireContext()));
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentProfileCustomizationBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -96,20 +95,16 @@ public class ProfileCustomizationFragment extends Fragment {
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
             if (profile != null) {
                 binding.displayNameInput.setText(profile.getDisplayName());
-                
-                com.corner.takecontrol.util.ImageLoader.loadProfileImage(
-                        profile.getEncryptedPhoto(), profile.getPhotoUrl(), binding.profileImage, R.drawable.ic_streak);
+                com.corner.takecontrol.util.ImageLoader.loadProfileImage(profile.getEncryptedPhoto(), profile.getPhotoUrl(), binding.profileImage, R.drawable.ic_streak);
 
-                // Update frame in preview
                 String frameId = profile.getEquippedFrameId();
                 int colorRes = ProgressionUtil.getFrameColorRes(frameId);
-                binding.profileImage.setStrokeColor(android.content.res.ColorStateList.valueOf(
-                        androidx.core.content.ContextCompat.getColor(requireContext(), colorRes)));
+                binding.profileImage.setStrokeColor(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), colorRes)));
 
-                framesAdapter.setData(ProgressionUtil.getAllFrames(), profile.getUnlockedFrames(), 
-                        profile.getEquippedFrameId() != null ? profile.getEquippedFrameId() : "NONE");
-                titlesAdapter.setData(ProgressionUtil.getAllTitles(), profile.getUnlockedTitles(), 
-                        profile.getEquippedTitleId() != null ? profile.getEquippedTitleId() : "NONE");
+                framesAdapter.setData(ProgressionUtil.getAllFrames(), profile.getUnlockedFrames(), profile.getEquippedFrameId() != null ? profile.getEquippedFrameId() : "NONE");
+                titlesAdapter.setData(ProgressionUtil.getAllTitles(), profile.getUnlockedTitles(), profile.getEquippedTitleId() != null ? profile.getEquippedTitleId() : "NONE");
+
+                updateCustomLabels(profile.getCustomCategories(), profile.getCustomActions());
             }
         });
 
@@ -120,20 +115,64 @@ public class ProfileCustomizationFragment extends Fragment {
         });
 
         binding.changePhotoButton.setOnClickListener(v -> {
-            pickMedia.launch(new androidx.activity.result.PickVisualMediaRequest.Builder()
-                    .setMediaType(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                    .build());
+            pickMedia.launch(new androidx.activity.result.PickVisualMediaRequest.Builder().setMediaType(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE).build());
         });
 
-        viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
-            binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
-        });
+        binding.addCategoryBtn.setOnClickListener(v -> showLabelDialog(null, true));
+        binding.addActionBtn.setOnClickListener(v -> showLabelDialog(null, false));
 
-        viewModel.getError().observe(getViewLifecycleOwner(), error -> {
-            if (error != null) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
-            }
-        });
+        viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE));
+        viewModel.getError().observe(getViewLifecycleOwner(), error -> { if (error != null) Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show(); });
+    }
+
+    private void updateCustomLabels(List<String> categories, List<String> actions) {
+        binding.categoriesChipGroup.removeAllViews();
+        for (String cat : categories) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(cat);
+            chip.setOnClickListener(v -> showLabelDialog(cat, true));
+            binding.categoriesChipGroup.addView(chip);
+        }
+
+        binding.actionsChipGroup.removeAllViews();
+        for (String act : actions) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(act);
+            chip.setOnClickListener(v -> showLabelDialog(act, false));
+            binding.actionsChipGroup.addView(chip);
+        }
+    }
+
+    private void showLabelDialog(String existingLabel, boolean isCategory) {
+        EditText input = new EditText(requireContext());
+        input.setText(existingLabel);
+        input.setHint(isCategory ? "Category Name" : "Action Name");
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding * 2, padding, padding * 2, padding);
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(existingLabel == null ? (isCategory ? "Add Category" : "Add Action") : (isCategory ? "Edit Category" : "Edit Action"))
+                .setView(input)
+                .setPositiveButton(R.string.save, (dialog, which) -> {
+                    String label = input.getText().toString().trim();
+                    if (!TextUtils.isEmpty(label)) {
+                        if (isCategory) {
+                            if (existingLabel == null) viewModel.addCategory(label);
+                            else viewModel.editCategory(existingLabel, label);
+                        } else {
+                            if (existingLabel == null) viewModel.addAction(label);
+                            else viewModel.editAction(existingLabel, label);
+                        }
+                    }
+                });
+
+        if (existingLabel != null) {
+            builder.setNeutralButton(R.string.remove, (dialog, which) -> {
+                if (isCategory) viewModel.deleteCategory(existingLabel);
+                else viewModel.deleteAction(existingLabel);
+            });
+        }
+        builder.setNegativeButton(R.string.cancel, null).show();
     }
 
     private void setupRecyclerViews() {

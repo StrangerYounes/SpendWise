@@ -17,6 +17,9 @@ import com.corner.takecontrol.R;
 import com.corner.takecontrol.data.model.ChallengeTask;
 import com.corner.takecontrol.data.model.TaskFrequency;
 import com.corner.takecontrol.data.model.TaskType;
+import com.corner.takecontrol.data.model.UserProfile;
+import com.corner.takecontrol.data.repository.UserRepository;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -24,8 +27,10 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class AddTaskDialogFragment extends DialogFragment {
@@ -42,6 +47,7 @@ public class AddTaskDialogFragment extends DialogFragment {
     private TaskUpdatedListener updateListener;
     private ChallengeTask taskToEdit;
     private int editPosition = -1;
+    private UserProfile currentUserProfile;
 
     public void setTaskAddedListener(TaskAddedListener listener) {
         this.listener = listener;
@@ -71,6 +77,37 @@ public class AddTaskDialogFragment extends DialogFragment {
         TextInputEditText unitInput = view.findViewById(R.id.unitInput);
         TextInputEditText timeInput = view.findViewById(R.id.timeInput);
         ChipGroup daysChipGroup = view.findViewById(R.id.daysChipGroup);
+        
+        MaterialButton advancedOptionsBtn = view.findViewById(R.id.advancedOptionsBtn);
+        View advancedOptionsContainer = view.findViewById(R.id.advancedOptionsContainer);
+        AutoCompleteTextView categoryInput = view.findViewById(R.id.categoryInput);
+        AutoCompleteTextView actionInput = view.findViewById(R.id.actionInput);
+
+        advancedOptionsBtn.setOnClickListener(v -> {
+            boolean isVisible = advancedOptionsContainer.getVisibility() == View.VISIBLE;
+            advancedOptionsContainer.setVisibility(isVisible ? View.GONE : View.VISIBLE);
+            advancedOptionsBtn.setIconResource(isVisible ? R.drawable.ic_expand_more : R.drawable.ic_expand_less);
+        });
+
+        // Load suggestions from profile
+        String userId = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+        if (userId != null) {
+            new UserRepository().getUserProfile(userId, profile -> {
+                if (profile != null && isAdded()) {
+                    currentUserProfile = profile;
+                    List<String> cats = new ArrayList<>(profile.getCustomCategories());
+                    if (cats.isEmpty()) {
+                        cats.addAll(Arrays.asList("Fitness", "Knowledge", "Health", "Productivity", "Self-Care", "Spiritual"));
+                    }
+                    categoryInput.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, cats));
+                    
+                    List<String> acts = new ArrayList<>(profile.getCustomActions());
+                    if (!acts.isEmpty()) {
+                        actionInput.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, acts));
+                    }
+                }
+            });
+        }
 
         String[] frequencies = getResources().getStringArray(R.array.task_frequencies);
         ArrayAdapter<String> frequencyAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, frequencies);
@@ -82,10 +119,10 @@ public class AddTaskDialogFragment extends DialogFragment {
         typeSpinner.setAdapter(typeAdapter);
         typeSpinner.setText(types[0], false);
 
-        typeSpinner.setOnItemClickListener((parent, view1, position, id) -> {
-            boolean checkmark = position == 0;
+        typeSpinner.setOnItemClickListener((parent, view1, pos, id) -> {
+            boolean checkmark = pos == 0;
             targetLayout.setVisibility(checkmark ? View.GONE : View.VISIBLE);
-            unitLayout.setVisibility(position == 1 ? View.VISIBLE : View.GONE);
+            unitLayout.setVisibility(pos == 1 ? View.VISIBLE : View.GONE);
         });
 
         timeInput.setOnClickListener(v -> {
@@ -103,18 +140,10 @@ public class AddTaskDialogFragment extends DialogFragment {
 
         if (taskToEdit != null) {
             titleInput.setText(taskToEdit.getTitle());
-            
-            // Use localized strings from the arrays
             int freqIdx = taskToEdit.getFrequencyEnum().ordinal();
-            if (freqIdx >= 0 && freqIdx < frequencies.length) {
-                frequencySpinner.setText(frequencies[freqIdx], false);
-            }
-            
+            if (freqIdx >= 0 && freqIdx < frequencies.length) frequencySpinner.setText(frequencies[freqIdx], false);
             int typeIdx = taskToEdit.getTaskTypeEnum().ordinal();
-            if (typeIdx >= 0 && typeIdx < types.length) {
-                typeSpinner.setText(types[typeIdx], false);
-            }
-
+            if (typeIdx >= 0 && typeIdx < types.length) typeSpinner.setText(types[typeIdx], false);
             targetInput.setText(String.valueOf(taskToEdit.getTargetValue()));
             unitInput.setText(taskToEdit.getUnit());
             timeInput.setText(taskToEdit.getExecutionTime());
@@ -122,17 +151,21 @@ public class AddTaskDialogFragment extends DialogFragment {
             if (taskToEdit.getDaysOfWeek() != null) {
                 int[] ids = {R.id.daySun, R.id.dayMon, R.id.dayTue, R.id.dayWed, R.id.dayThu, R.id.dayFri, R.id.daySat};
                 for (int day : taskToEdit.getDaysOfWeek()) {
-                    if (day >= 1 && day <= 7) {
-                        daysChipGroup.check(ids[day - 1]);
-                    }
+                    if (day >= 1 && day <= 7) daysChipGroup.check(ids[day - 1]);
                 }
+            }
+
+            if (!TextUtils.isEmpty(taskToEdit.getManualCategory()) || !TextUtils.isEmpty(taskToEdit.getManualAction())) {
+                advancedOptionsContainer.setVisibility(View.VISIBLE);
+                advancedOptionsBtn.setIconResource(R.drawable.ic_expand_less);
+                categoryInput.setText(taskToEdit.getManualCategory());
+                actionInput.setText(taskToEdit.getManualAction());
             }
             
             boolean checkmark = taskToEdit.getTaskTypeEnum() == TaskType.CHECKMARK;
             targetLayout.setVisibility(checkmark ? View.GONE : View.VISIBLE);
             unitLayout.setVisibility(taskToEdit.getTaskTypeEnum() == TaskType.NUMERIC ? View.VISIBLE : View.GONE);
         } else {
-            // Default visibility
             targetLayout.setVisibility(View.GONE);
             unitLayout.setVisibility(View.GONE);
         }
@@ -150,19 +183,13 @@ public class AddTaskDialogFragment extends DialogFragment {
                     int freqPos = -1;
                     String selectedFreq = frequencySpinner.getText().toString();
                     for (int i = 0; i < frequencies.length; i++) {
-                        if (frequencies[i].equalsIgnoreCase(selectedFreq)) {
-                            freqPos = i;
-                            break;
-                        }
+                        if (frequencies[i].equalsIgnoreCase(selectedFreq)) { freqPos = i; break; }
                     }
 
                     int typePos = -1;
                     String selectedType = typeSpinner.getText().toString();
                     for (int i = 0; i < types.length; i++) {
-                        if (types[i].equalsIgnoreCase(selectedType)) {
-                            typePos = i;
-                            break;
-                        }
+                        if (types[i].equalsIgnoreCase(selectedType)) { typePos = i; break; }
                     }
 
                     TaskFrequency frequency = TaskFrequency.values()[freqPos != -1 ? freqPos : 0];
@@ -177,24 +204,38 @@ public class AddTaskDialogFragment extends DialogFragment {
                         }
                         target = Double.parseDouble(targetStr);
                         unit = unitInput.getText() != null ? unitInput.getText().toString().trim() : "";
-                        if (type == TaskType.DURATION) {
-                            unit = "min";
-                        }
+                        if (type == TaskType.DURATION) unit = "min";
                     }
 
                     ChallengeTask task = new ChallengeTask(title, frequency.getValue(), type.getValue(), target, unit, 0);
                     task.setExecutionTime(timeInput.getText().toString());
+                    task.setManualCategory(categoryInput.getText().toString().trim());
+                    task.setManualAction(actionInput.getText().toString().trim());
                     
+                    // Save new labels to profile if changed
+                    if (currentUserProfile != null) {
+                        boolean changed = false;
+                        String mCat = task.getManualCategory();
+                        if (!mCat.isEmpty() && !currentUserProfile.getCustomCategories().contains(mCat)) {
+                            currentUserProfile.getCustomCategories().add(mCat);
+                            changed = true;
+                        }
+                        String mAct = task.getManualAction();
+                        if (!mAct.isEmpty() && !currentUserProfile.getCustomActions().contains(mAct)) {
+                            currentUserProfile.getCustomActions().add(mAct);
+                            changed = true;
+                        }
+                        if (changed) {
+                            new UserRepository().updateUserProfile(currentUserProfile.getId(), currentUserProfile, null);
+                        }
+                    }
+
                     List<Integer> selectedDays = new ArrayList<>();
                     int[] ids = {R.id.daySun, R.id.dayMon, R.id.dayTue, R.id.dayWed, R.id.dayThu, R.id.dayFri, R.id.daySat};
                     for (int i = 0; i < ids.length; i++) {
-                        if (daysChipGroup.getCheckedChipIds().contains(ids[i])) {
-                            selectedDays.add(i + 1);
-                        }
+                        if (daysChipGroup.getCheckedChipIds().contains(ids[i])) selectedDays.add(i + 1);
                     }
-                    if (!selectedDays.isEmpty()) {
-                        task.setDaysOfWeek(selectedDays);
-                    }
+                    if (!selectedDays.isEmpty()) task.setDaysOfWeek(selectedDays);
 
                     if (taskToEdit == null) {
                         if (listener != null) listener.onTaskAdded(task);

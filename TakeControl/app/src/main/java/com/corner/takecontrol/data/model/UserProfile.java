@@ -27,6 +27,8 @@ public class UserProfile {
     private String equippedFrameId;
     private String equippedTitleId;
     private boolean unlimitedChallengeSlots;
+    private List<String> customCategories = new ArrayList<>();
+    private List<String> customActions = new ArrayList<>();
 
     @ServerTimestamp
     private Timestamp createdAt;
@@ -171,5 +173,21 @@ public class UserProfile {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<String> getCustomCategories() {
+        return customCategories;
+    }
+
+    public void setCustomCategories(List<String> customCategories) {
+        this.customCategories = customCategories;
+    }
+
+    public List<String> getCustomActions() {
+        return customActions;
+    }
+
+    public void setCustomActions(List<String> customActions) {
+        this.customActions = customActions;
     }
 }

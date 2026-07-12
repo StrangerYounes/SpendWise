@@ -52,16 +52,31 @@ public class StatisticsFragment extends Fragment {
             binding.totalTasksText.setText("0");
             binding.volumeContainer.removeAllViews();
             binding.categoryContainer.removeAllViews();
+            binding.weeklyGraph.setData(null);
+            binding.heatmapView.setData(null);
             return;
         }
 
         binding.totalTasksText.setText(String.valueOf(stats.getTotalTasksCompleted()));
+        binding.weeklyGraph.setData(stats.getDailyCompletions());
+        binding.heatmapView.setData(stats.getDailyCompletions());
 
-        // Update Volume Stats
+        // Update Volume Stats (Activities by Unit)
         binding.volumeContainer.removeAllViews();
-        for (Map.Entry<String, Double> entry : stats.getUnitTotals().entrySet()) {
-            if (entry.getValue() > 0) {
-                addStatRow(binding.volumeContainer, entry.getKey(), entry.getValue());
+        Map<String, Map<String, Double>> unitActions = stats.getUnitActionTotals();
+        for (Map.Entry<String, Double> unitEntry : stats.getUnitTotals().entrySet()) {
+            if (unitEntry.getValue() > 0) {
+                String unit = unitEntry.getKey();
+                addHeaderRow(binding.volumeContainer, unit);
+                
+                Map<String, Double> actions = unitActions.get(unit);
+                if (actions != null) {
+                    for (Map.Entry<String, Double> actionEntry : actions.entrySet()) {
+                        if (actionEntry.getValue() > 0) {
+                            addStatRow(binding.volumeContainer, actionEntry.getKey(), actionEntry.getValue(), unit);
+                        }
+                    }
+                }
             }
         }
 
@@ -69,12 +84,21 @@ public class StatisticsFragment extends Fragment {
         binding.categoryContainer.removeAllViews();
         for (Map.Entry<String, Double> entry : stats.getCategoryTotals().entrySet()) {
             if (entry.getValue() > 0) {
-                addStatRow(binding.categoryContainer, entry.getKey(), entry.getValue());
+                addStatRow(binding.categoryContainer, entry.getKey(), entry.getValue(), null);
             }
         }
     }
 
-    private void addStatRow(LinearLayout container, String label, Double value) {
+    private void addHeaderRow(LinearLayout container, String label) {
+        TextView header = new TextView(requireContext());
+        header.setPadding(16, 16, 16, 8);
+        header.setText(label.substring(0, 1).toUpperCase() + label.substring(1));
+        header.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleSmall);
+        header.setTextColor(getResources().getColor(R.color.primary, null));
+        container.addView(header);
+    }
+
+    private void addStatRow(LinearLayout container, String label, Double value, String unit) {
         View row = getLayoutInflater().inflate(R.layout.item_stat_row, container, false);
         TextView labelTv = row.findViewById(R.id.statLabelText);
         TextView valueTv = row.findViewById(R.id.statValueText);
@@ -84,10 +108,17 @@ public class StatisticsFragment extends Fragment {
         labelTv.setText(formattedLabel);
         
         // Format value: if it's a whole number, don't show .0
+        String valStr;
         if (value == value.intValue()) {
-            valueTv.setText(String.valueOf(value.intValue()));
+            valStr = String.valueOf(value.intValue());
         } else {
-            valueTv.setText(String.format(java.util.Locale.US, "%.1f", value));
+            valStr = String.format(java.util.Locale.US, "%.1f", value);
+        }
+        
+        if (unit != null) {
+            valueTv.setText(valStr + " " + unit);
+        } else {
+            valueTv.setText(valStr);
         }
 
         container.addView(row);
@@ -96,24 +127,31 @@ public class StatisticsFragment extends Fragment {
     private void updateLockStates(UserProfile profile) {
         int level = profile != null ? profile.getLevel() : 1;
 
+        // Weekly Graph Lock
+        updateSectionLock(level, FeatureFlags.LVL_THRESHOLD_GRAPHS, 
+                binding.weeklyGraph, binding.weeklyLockedState.getRoot(), binding.weeklyLockedState.lockedMessageText);
+
+        // Heatmap Lock
+        updateSectionLock(level, FeatureFlags.LVL_THRESHOLD_HEATMAP,
+                binding.heatmapView, binding.heatmapLockedState.getRoot(), binding.heatmapLockedState.lockedMessageText);
+
         // Volume Stats Lock
-        if (level < FeatureFlags.LVL_THRESHOLD_VOLUME) {
-            binding.volumeContainer.setVisibility(View.GONE);
-            binding.volumeLockedState.getRoot().setVisibility(View.VISIBLE);
-            binding.volumeLockedState.lockedMessageText.setText("Unlock at Level " + FeatureFlags.LVL_THRESHOLD_VOLUME);
-        } else {
-            binding.volumeContainer.setVisibility(View.VISIBLE);
-            binding.volumeLockedState.getRoot().setVisibility(View.GONE);
-        }
+        updateSectionLock(level, FeatureFlags.LVL_THRESHOLD_VOLUME,
+                binding.volumeContainer, binding.volumeLockedState.getRoot(), binding.volumeLockedState.lockedMessageText);
 
         // Category Stats Lock
-        if (level < FeatureFlags.LVL_THRESHOLD_CATEGORIES) {
-            binding.categoryContainer.setVisibility(View.GONE);
-            binding.categoryLockedState.getRoot().setVisibility(View.VISIBLE);
-            binding.categoryLockedState.lockedMessageText.setText("Unlock at Level " + FeatureFlags.LVL_THRESHOLD_CATEGORIES);
+        updateSectionLock(level, FeatureFlags.LVL_THRESHOLD_CATEGORIES,
+                binding.categoryContainer, binding.categoryLockedState.getRoot(), binding.categoryLockedState.lockedMessageText);
+    }
+
+    private void updateSectionLock(int userLevel, int threshold, View content, View lockState, TextView lockMsg) {
+        if (userLevel < threshold) {
+            content.setVisibility(View.GONE);
+            lockState.setVisibility(View.VISIBLE);
+            lockMsg.setText("Unlock at Level " + threshold);
         } else {
-            binding.categoryContainer.setVisibility(View.VISIBLE);
-            binding.categoryLockedState.getRoot().setVisibility(View.GONE);
+            content.setVisibility(View.VISIBLE);
+            lockState.setVisibility(View.GONE);
         }
     }
 

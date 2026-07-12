@@ -9,6 +9,8 @@ import com.corner.takecontrol.data.repository.RepositoryCallback;
 import com.corner.takecontrol.data.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.List;
+
 public class ProfileCustomizationViewModel extends ViewModel {
 
     private final UserRepository userRepository;
@@ -85,6 +87,62 @@ public class ProfileCustomizationViewModel extends ViewModel {
 
         profile.setDisplayName(name.trim());
         updateProfile(profile);
+    }
+
+    public void addCategory(String category) {
+        UserProfile profile = userProfile.getValue();
+        if (profile != null && !category.isEmpty() && !profile.getCustomCategories().contains(category)) {
+            profile.getCustomCategories().add(category);
+            updateProfile(profile);
+        }
+    }
+
+    public void editCategory(String oldCat, String newCat) {
+        UserProfile profile = userProfile.getValue();
+        if (profile != null && !newCat.isEmpty()) {
+            List<String> cats = profile.getCustomCategories();
+            int idx = cats.indexOf(oldCat);
+            if (idx != -1) {
+                cats.set(idx, newCat);
+                updateProfile(profile);
+            }
+        }
+    }
+
+    public void deleteCategory(String category) {
+        UserProfile profile = userProfile.getValue();
+        if (profile != null) {
+            profile.getCustomCategories().remove(category);
+            updateProfile(profile);
+        }
+    }
+
+    public void addAction(String action) {
+        UserProfile profile = userProfile.getValue();
+        if (profile != null && !action.isEmpty() && !profile.getCustomActions().contains(action)) {
+            profile.getCustomActions().add(action);
+            updateProfile(profile);
+        }
+    }
+
+    public void editAction(String oldAct, String newAct) {
+        UserProfile profile = userProfile.getValue();
+        if (profile != null && !newAct.isEmpty()) {
+            List<String> acts = profile.getCustomActions();
+            int idx = acts.indexOf(oldAct);
+            if (idx != -1) {
+                acts.set(idx, newAct);
+                updateProfile(profile);
+            }
+        }
+    }
+
+    public void deleteAction(String action) {
+        UserProfile profile = userProfile.getValue();
+        if (profile != null) {
+            profile.getCustomActions().remove(action);
+            updateProfile(profile);
+        }
     }
 
     public void uploadAndSetPhoto(android.net.Uri uri, android.content.ContentResolver contentResolver) {

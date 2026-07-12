@@ -35,35 +35,41 @@ public class UserRepository {
                     if (profile != null) {
                         profile.setId(snapshot.getId());
                     }
-                    callback.onSuccess(profile);
+                    if (callback != null) callback.onSuccess(profile);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public ListenerRegistration listenToUserProfile(String userId, RepositoryCallback<UserProfile> callback) {
         return firestore.collection("users").document(userId)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
                     if (snapshot == null || !snapshot.exists()) {
-                        callback.onSuccess(null);
+                        if (callback != null) callback.onSuccess(null);
                         return;
                     }
                     UserProfile profile = snapshot.toObject(UserProfile.class);
                     if (profile != null) {
                         profile.setId(snapshot.getId());
                     }
-                    callback.onSuccess(profile);
+                    if (callback != null) callback.onSuccess(profile);
                 });
     }
 
     public void updateUserProfile(String userId, UserProfile profile, RepositoryCallback<Void> callback) {
         firestore.collection("users").document(userId)
                 .set(profile)
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     // TODO: Implement uploadProfileImage(String userId, byte[] encryptedData, ...) using 
@@ -133,13 +139,17 @@ public class UserRepository {
 
                 firestore.collection("users").document(userId)
                         .set(profile)
-                        .addOnSuccessListener(unused -> callback.onSuccess(null))
-                        .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                        .addOnSuccessListener(unused -> {
+                            if (callback != null) callback.onSuccess(null);
+                        })
+                        .addOnFailureListener(e -> {
+                            if (callback != null) callback.onError(e.getMessage());
+                        });
             }
 
             @Override
             public void onError(String message) {
-                callback.onError(message);
+                if (callback != null) callback.onError(message);
             }
         });
     }
@@ -149,7 +159,7 @@ public class UserRepository {
             @Override
             public void onSuccess(UserProfile profile) {
                 if (profile == null) {
-                    callback.onError("User profile not found");
+                    if (callback != null) callback.onError("User profile not found");
                     return;
                 }
 
@@ -167,13 +177,17 @@ public class UserRepository {
 
                 firestore.collection("users").document(userId)
                         .set(profile)
-                        .addOnSuccessListener(unused -> callback.onSuccess(null))
-                        .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                        .addOnSuccessListener(unused -> {
+                            if (callback != null) callback.onSuccess(null);
+                        })
+                        .addOnFailureListener(e -> {
+                            if (callback != null) callback.onError(e.getMessage());
+                        });
             }
 
             @Override
             public void onError(String message) {
-                callback.onError(message);
+                if (callback != null) callback.onError(message);
             }
         });
     }
@@ -184,7 +198,7 @@ public class UserRepository {
 
     public void getUserProfiles(List<String> userIds, RepositoryCallback<Map<String, UserProfile>> callback) {
         if (userIds == null || userIds.isEmpty()) {
-            callback.onSuccess(new HashMap<>());
+            if (callback != null) callback.onSuccess(new HashMap<>());
             return;
         }
 
@@ -197,7 +211,7 @@ public class UserRepository {
                                   Map<String, UserProfile> profiles,
                                   RepositoryCallback<Map<String, UserProfile>> callback) {
         if (remaining.isEmpty()) {
-            callback.onSuccess(profiles);
+            if (callback != null) callback.onSuccess(profiles);
             return;
         }
 
@@ -226,7 +240,7 @@ public class UserRepository {
                 .whereEqualTo("read", false)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
                     List<AppNotification> list = new ArrayList<>();
@@ -237,7 +251,7 @@ public class UserRepository {
                             list.add(notification);
                         }
                     }
-                    callback.onSuccess(list);
+                    if (callback != null) callback.onSuccess(list);
                 });
     }
 
@@ -245,8 +259,12 @@ public class UserRepository {
         firestore.collection("users").document(toUserId)
                 .collection("notifications")
                 .add(notification)
-                .addOnSuccessListener(ref -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(ref -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void markNotificationRead(String userId, String notificationId) {

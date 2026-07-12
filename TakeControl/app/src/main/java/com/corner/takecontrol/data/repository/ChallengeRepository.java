@@ -49,8 +49,12 @@ public class ChallengeRepository {
 
         firestore.collection(COLLECTION_CHALLENGES)
                 .add(challenge)
-                .addOnSuccessListener(ref -> callback.onSuccess(ref.getId()))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(ref -> {
+                    if (callback != null) callback.onSuccess(ref.getId());
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public ListenerRegistration listenToMyChallenges(String userId, boolean showArchived, RepositoryCallback<List<Challenge>> callback) {
@@ -58,11 +62,11 @@ public class ChallengeRepository {
                 .whereArrayContains("memberIds", userId)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
                     if (snapshot == null) {
-                        callback.onSuccess(Collections.emptyList());
+                        if (callback != null) callback.onSuccess(Collections.emptyList());
                         return;
                     }
                     List<Challenge> challenges = new ArrayList<>();
@@ -78,7 +82,7 @@ public class ChallengeRepository {
                     challenges.sort(Comparator.comparing(
                             (Challenge c) -> c.getCreatedAt() != null ? c.getCreatedAt().toDate().getTime() : 0L
                     ).reversed());
-                    callback.onSuccess(challenges);
+                    if (callback != null) callback.onSuccess(challenges);
                 });
     }
 
@@ -90,51 +94,65 @@ public class ChallengeRepository {
                     if (challenge != null) {
                         challenge.setId(snapshot.getId());
                     }
-                    callback.onSuccess(challenge);
+                    if (callback != null) callback.onSuccess(challenge);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public ListenerRegistration listenToChallenge(String challengeId, RepositoryCallback<Challenge> callback) {
         return firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
                     if (snapshot == null || !snapshot.exists()) {
-                        callback.onSuccess(null);
+                        if (callback != null) callback.onSuccess(null);
                         return;
                     }
                     Challenge challenge = snapshot.toObject(Challenge.class);
                     if (challenge != null) {
                         challenge.setId(snapshot.getId());
                     }
-                    callback.onSuccess(challenge);
+                    if (callback != null) callback.onSuccess(challenge);
                 });
     }
 
     public void updateChallenge(String challengeId, Challenge challenge, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .set(challenge)
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void updateTask(String challengeId, ChallengeTask task, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_TASKS).document(task.getId())
                 .set(task)
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void addTask(String challengeId, ChallengeTask task, RepositoryCallback<String> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_TASKS)
                 .add(task)
-                .addOnSuccessListener(ref -> callback.onSuccess(ref.getId()))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(ref -> {
+                    if (callback != null) callback.onSuccess(ref.getId());
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void getTasks(String challengeId, RepositoryCallback<List<ChallengeTask>> callback) {
@@ -142,8 +160,12 @@ public class ChallengeRepository {
                 .collection(SUBCOLLECTION_TASKS)
                 .orderBy("orderIndex", Query.Direction.ASCENDING)
                 .get()
-                .addOnSuccessListener(snapshot -> callback.onSuccess(mapTasks(snapshot, challengeId)))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(snapshot -> {
+                    if (callback != null) callback.onSuccess(mapTasks(snapshot, challengeId));
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public ListenerRegistration listenToTasks(String challengeId, RepositoryCallback<List<ChallengeTask>> callback) {
@@ -152,10 +174,10 @@ public class ChallengeRepository {
                 .orderBy("orderIndex", Query.Direction.ASCENDING)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
-                    callback.onSuccess(snapshot != null ? mapTasks(snapshot, challengeId) : Collections.emptyList());
+                    if (callback != null) callback.onSuccess(snapshot != null ? mapTasks(snapshot, challengeId) : Collections.emptyList());
                 });
     }
 
@@ -174,8 +196,12 @@ public class ChallengeRepository {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_TASKS).document(taskId)
                 .delete()
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void startChallenge(String challengeId, Challenge challenge, RepositoryCallback<Void> callback) {
@@ -199,8 +225,12 @@ public class ChallengeRepository {
     public void completeChallenge(String challengeId, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("status", ChallengeStatus.COMPLETED.getValue())
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void deleteChallenge(String challengeId, RepositoryCallback<Void> callback) {
@@ -209,37 +239,57 @@ public class ChallengeRepository {
         // We'll just delete the main document for now.
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .delete()
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void leaveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("memberIds", com.google.firebase.firestore.FieldValue.arrayRemove(userId))
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void kickMember(String challengeId, String memberUid, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("memberIds", com.google.firebase.firestore.FieldValue.arrayRemove(memberUid))
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void archiveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void generateShareCode(String challengeId, RepositoryCallback<String> callback) {
         String code = ShareCodeGenerator.generate();
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("shareCode", code)
-                .addOnSuccessListener(unused -> callback.onSuccess(code))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(code);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void joinByShareCode(String userId, String shareCode, RepositoryCallback<String> callback) {
@@ -250,31 +300,37 @@ public class ChallengeRepository {
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot.isEmpty()) {
-                        callback.onError("Challenge not found. Check the code and try again.");
+                        if (callback != null) callback.onError("Challenge not found. Check the code and try again.");
                         return;
                     }
                     DocumentSnapshot doc = snapshot.getDocuments().get(0);
                     Challenge challenge = doc.toObject(Challenge.class);
                     if (challenge == null) {
-                        callback.onError("Challenge not found.");
+                        if (callback != null) callback.onError("Challenge not found.");
                         return;
                     }
                     if (challenge.getMemberIds() != null && challenge.getMemberIds().contains(userId)) {
-                        callback.onSuccess(doc.getId());
+                        if (callback != null) callback.onSuccess(doc.getId());
                         return;
                     }
                     
                     // Return the challenge object to check for password requirement in the UI
-                    callback.onSuccess("CHECK_PASSWORD:" + doc.getId());
+                    if (callback != null) callback.onSuccess("CHECK_PASSWORD:" + doc.getId());
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void joinChallenge(String userId, String challengeId, RepositoryCallback<String> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .update("memberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
-                .addOnSuccessListener(unused -> callback.onSuccess(challengeId))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(challengeId);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void getPublicChallenges(String userId, RepositoryCallback<List<Challenge>> callback) {
@@ -290,9 +346,11 @@ public class ChallengeRepository {
                             challenges.add(challenge);
                         }
                     }
-                    callback.onSuccess(challenges);
+                    if (callback != null) callback.onSuccess(challenges);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public List<ChallengeTask> getTodayTasksSync(String userId) throws Exception {
@@ -358,9 +416,11 @@ public class ChallengeRepository {
                             }
                         }
                     }
-                    callback.onSuccess(count);
+                    if (callback != null) callback.onSuccess(count);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public void saveProgress(String challengeId, TaskProgress progress, RepositoryCallback<Void> callback) {
@@ -368,8 +428,12 @@ public class ChallengeRepository {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_PROGRESS).document(docId)
                 .set(progress)
-                .addOnSuccessListener(unused -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public ListenerRegistration listenToProgress(String challengeId, RepositoryCallback<List<TaskProgress>> callback) {
@@ -377,7 +441,7 @@ public class ChallengeRepository {
                 .collection(SUBCOLLECTION_PROGRESS)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
                     List<TaskProgress> progressList = new ArrayList<>();
@@ -388,7 +452,7 @@ public class ChallengeRepository {
                             progressList.add(progress);
                         }
                     }
-                    callback.onSuccess(progressList);
+                    if (callback != null) callback.onSuccess(progressList);
                 });
     }
 }

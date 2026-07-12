@@ -25,8 +25,21 @@ public class StatsRepository {
                         stats.setUserId(userId);
                     }
                     
-                    String category = TaskCategorizer.categorize(task.getTitle());
-                    stats.updateStats(category, task.getUnit(), value, increment);
+                    String category = task.getManualCategory();
+                    if (category == null || category.isEmpty()) {
+                        category = TaskCategorizer.categorize(task.getTitle());
+                    }
+                    
+                    String action = task.getManualAction();
+                    if (action == null || action.isEmpty()) {
+                        action = TaskCategorizer.extractAction(task.getTitle());
+                    }
+                    
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    String today = String.format(java.util.Locale.US, "%04d-%02d-%02d",
+                            cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
+
+                    stats.updateStats(category, task.getUnit(), action, value, today, increment);
 
                     firestore.collection(COLLECTION_STATS).document(userId)
                             .set(stats)
@@ -50,27 +63,29 @@ public class StatsRepository {
                     if (stats != null) {
                         stats.setUserId(snapshot.getId());
                     }
-                    callback.onSuccess(stats);
+                    if (callback != null) callback.onSuccess(stats);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
     }
 
     public ListenerRegistration listenToUserStats(String userId, RepositoryCallback<UserStats> callback) {
         return firestore.collection(COLLECTION_STATS).document(userId)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
-                        callback.onError(error.getMessage());
+                        if (callback != null) callback.onError(error.getMessage());
                         return;
                     }
                     if (snapshot == null || !snapshot.exists()) {
-                        callback.onSuccess(null);
+                        if (callback != null) callback.onSuccess(null);
                         return;
                     }
                     UserStats stats = snapshot.toObject(UserStats.class);
                     if (stats != null) {
                         stats.setUserId(snapshot.getId());
                     }
-                    callback.onSuccess(stats);
+                    if (callback != null) callback.onSuccess(stats);
                 });
     }
 }
