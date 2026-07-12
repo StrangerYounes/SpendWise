@@ -6,17 +6,24 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.Nullable;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class ProductivityHeatmapView extends View {
+
+    public interface OnCellClickListener {
+        void onCellClick(String date, int count);
+    }
 
     private Map<String, Integer> dailyCompletions = new HashMap<>();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -24,6 +31,19 @@ public class ProductivityHeatmapView extends View {
     private int cellSize = 30;
     private int cellMargin = 6;
     private int numWeeks = 20;
+    private OnCellClickListener listener;
+
+    private final List<CellInfo> cells = new ArrayList<>();
+    private static class CellInfo {
+        RectF rect;
+        String date;
+        int count;
+        CellInfo(RectF rect, String date, int count) {
+            this.rect = new RectF(rect);
+            this.date = date;
+            this.count = count;
+        }
+    }
 
     public ProductivityHeatmapView(Context context) {
         super(context);
@@ -38,6 +58,10 @@ public class ProductivityHeatmapView extends View {
         invalidate();
     }
 
+    public void setOnCellClickListener(OnCellClickListener listener) {
+        this.listener = listener;
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int height = (cellSize + cellMargin) * 7 + getPaddingTop() + getPaddingBottom();
@@ -49,6 +73,7 @@ public class ProductivityHeatmapView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (dailyCompletions == null) return;
+        cells.clear();
 
         Calendar cal = Calendar.getInstance();
         // Go back to the start of the first week shown
@@ -69,6 +94,7 @@ public class ProductivityHeatmapView extends View {
                 paint.setColor(getColorForCount(count));
                 rect.set(x, y, x + cellSize, y + cellSize);
                 canvas.drawRoundRect(rect, 4, 4, paint);
+                cells.add(new CellInfo(rect, dateKey, count));
 
                 cal.add(Calendar.DAY_OF_YEAR, 1);
                 y += cellSize + cellMargin;
@@ -83,5 +109,20 @@ public class ProductivityHeatmapView extends View {
         if (count < 4) return Color.parseColor("#40C463");
         if (count < 6) return Color.parseColor("#30A14E");
         return Color.parseColor("#216E39");
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            float x = event.getX();
+            float y = event.getY();
+            for (CellInfo cell : cells) {
+                if (cell.rect.contains(x, y)) {
+                    if (listener != null) listener.onCellClick(cell.date, cell.count);
+                    return true;
+                }
+            }
+        }
+        return super.onTouchEvent(event);
     }
 }
