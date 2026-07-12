@@ -78,6 +78,11 @@ public class HomeFragment extends Fragment {
             Navigation.findNavController(v).navigate(R.id.action_home_to_statistics);
         });
 
+        binding.leaderboardFab.setOnClickListener(v -> {
+            toggleMenu();
+            Navigation.findNavController(v).navigate(R.id.action_home_to_leaderboard);
+        });
+
         binding.templatesFab.setOnClickListener(v -> {
             toggleMenu();
             TemplatesDialogFragment dialog = new TemplatesDialogFragment();
@@ -200,7 +205,8 @@ public class HomeFragment extends Fragment {
                 binding.templatesFab,
                 binding.exploreFab,
                 binding.customizationFab,
-                binding.statisticsFab
+                binding.statisticsFab,
+                binding.leaderboardFab
         };
 
         for (int i = 0; i < subFabs.length; i++) {
@@ -265,6 +271,7 @@ public class HomeFragment extends Fragment {
             binding.templatesFab.animate().cancel();
             binding.customizationFab.animate().cancel();
             binding.statisticsFab.animate().cancel();
+            binding.leaderboardFab.animate().cancel();
         }
         super.onDestroyView();
         binding = null;

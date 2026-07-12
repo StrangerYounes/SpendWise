@@ -112,6 +112,25 @@ public class UserRepository {
                 // 2. Reward XP
                 long xpReward = XpUtil.getXpReward(task.getTaskType(), isLate);
                 profile.setXp(profile.getXp() + xpReward);
+                
+                // Update Weekly and Monthly XP
+                String currentWeek = cal.get(Calendar.YEAR) + "-W" + cal.get(Calendar.WEEK_OF_YEAR);
+                String currentMonth = cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH) + 1);
+
+                if (!currentWeek.equals(profile.getLastXpUpdateWeek())) {
+                    profile.setWeeklyXp(xpReward);
+                    profile.setLastXpUpdateWeek(currentWeek);
+                } else {
+                    profile.setWeeklyXp(profile.getWeeklyXp() + xpReward);
+                }
+
+                if (!currentMonth.equals(profile.getLastXpUpdateMonth())) {
+                    profile.setMonthlyXp(xpReward);
+                    profile.setLastXpUpdateMonth(currentMonth);
+                } else {
+                    profile.setMonthlyXp(profile.getMonthlyXp() + xpReward);
+                }
+
                 profile.setLevel(XpUtil.calculateLevel(profile.getXp()));
 
                 // 3. Unlock Progression Rewards
@@ -271,5 +290,119 @@ public class UserRepository {
         firestore.collection("users").document(userId)
                 .collection("notifications").document(notificationId)
                 .update("read", true);
+    }
+
+    public void getGlobalLeaderboard(String sortByField, int limit, RepositoryCallback<List<UserProfile>> callback) {
+        firestore.collection("users")
+                .orderBy(sortByField, Query.Direction.DESCENDING)
+                .limit(limit)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<UserProfile> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        UserProfile profile = doc.toObject(UserProfile.class);
+                        profile.setId(doc.getId());
+                        list.add(profile);
+                    }
+                    if (callback != null) callback.onSuccess(list);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void getFilteredLeaderboard(String filterField, String filterValue, String sortByField, int limit, RepositoryCallback<List<UserProfile>> callback) {
+        firestore.collection("users")
+                .whereEqualTo(filterField, filterValue)
+                .orderBy(sortByField, Query.Direction.DESCENDING)
+                .limit(limit)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<UserProfile> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        UserProfile profile = doc.toObject(UserProfile.class);
+                        profile.setId(doc.getId());
+                        list.add(profile);
+                    }
+                    if (callback != null) callback.onSuccess(list);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void getFriendsLeaderboard(List<String> friendIds, String sortByField, RepositoryCallback<List<UserProfile>> callback) {
+        if (friendIds == null || friendIds.isEmpty()) {
+            if (callback != null) callback.onSuccess(new ArrayList<>());
+            return;
+        }
+
+        // Firestore 'in' query is limited to 10-30 items depending on version, 
+        // but for a simple implementation we'll use it.
+        firestore.collection("users")
+                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), friendIds)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<UserProfile> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        UserProfile profile = doc.toObject(UserProfile.class);
+                        profile.setId(doc.getId());
+                        list.add(profile);
+                    }
+                    // Manual sort since we can't easily orderBy with whereIn in some Firestore versions or it might require complex indices
+                    list.sort((a, b) -> {
+                        long valA = getSortValue(a, sortByField);
+                        long valB = getSortValue(b, sortByField);
+                        return Long.compare(valB, valA);
+                    });
+                    if (callback != null) callback.onSuccess(list);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void getUserRank(String userId, String scope, String timeframe, RepositoryCallback<Integer> callback) {
+        getUserProfile(userId, new RepositoryCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                if (profile == null) {
+                    callback.onError("Profile not found");
+                    return;
+                }
+
+                long value = getSortValue(profile, timeframe);
+                com.google.firebase.firestore.Query query = firestore.collection("users")
+                        .whereGreaterThan(timeframe, value);
+
+                if ("Country".equals(scope) && profile.getCountry() != null) {
+                    query = query.whereEqualTo("country", profile.getCountry());
+                } else if ("University".equals(scope) && profile.getUniversity() != null) {
+                    query = query.whereEqualTo("university", profile.getUniversity());
+                } else if ("Company".equals(scope) && profile.getCompany() != null) {
+                    query = query.whereEqualTo("company", profile.getCompany());
+                }
+
+                query.count().get(com.google.firebase.firestore.AggregateSource.SERVER)
+                        .addOnSuccessListener(aggregateQuerySnapshot -> {
+                            int rank = (int) aggregateQuerySnapshot.getCount() + 1;
+                            callback.onSuccess(rank);
+                        })
+                        .addOnFailureListener(e -> callback.onError(e.getMessage()));
+            }
+
+            @Override
+            public void onError(String message) {
+                callback.onError(message);
+            }
+        });
+    }
+
+    private long getSortValue(UserProfile profile, String field) {
+        switch (field) {
+            case "weeklyXp": return profile.getWeeklyXp();
+            case "monthlyXp": return profile.getMonthlyXp();
+            default: return profile.getXp();
+        }
     }
 }

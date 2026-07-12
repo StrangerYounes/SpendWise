@@ -81,11 +81,26 @@ public class ProfileCustomizationViewModel extends ViewModel {
         updateProfile(profile);
     }
 
-    public void updateDisplayName(String name) {
+    public void updateProfileInfo(String name, String country, String university, String company) {
         UserProfile profile = userProfile.getValue();
-        if (profile == null || name == null || name.trim().isEmpty()) return;
+        if (profile == null) return;
 
-        profile.setDisplayName(name.trim());
+        if (name != null && !name.trim().isEmpty()) {
+            profile.setDisplayName(name.trim());
+        }
+        profile.setCountry(country != null && !country.trim().isEmpty() ? country.trim() : null);
+        profile.setUniversity(university != null && !university.trim().isEmpty() ? university.trim() : null);
+        profile.setCompany(company != null && !company.trim().isEmpty() ? company.trim() : null);
+
+        updateProfile(profile);
+    }
+
+    public void updateFlexedRank(String scope, String timeframe) {
+        UserProfile profile = userProfile.getValue();
+        if (profile == null) return;
+
+        profile.setFlexedRankScope(scope);
+        profile.setFlexedRankTimeframe(timeframe);
         updateProfile(profile);
     }
 

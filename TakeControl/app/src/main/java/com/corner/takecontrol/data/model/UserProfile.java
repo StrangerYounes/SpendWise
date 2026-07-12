@@ -20,12 +20,22 @@ public class UserProfile {
     private int longestStreak;
     private String lastCompletionDate; // YYYY-MM-DD
     private long xp;
+    private long weeklyXp;
+    private long monthlyXp;
+    private String lastXpUpdateWeek; // e.g. "2024-W50"
+    private String lastXpUpdateMonth; // e.g. "2024-12"
     private int level;
     private List<String> achievements;
     private List<String> unlockedFrames;
     private List<String> unlockedTitles;
     private String equippedFrameId;
     private String equippedTitleId;
+    private String country;
+    private String university;
+    private String company;
+    private List<String> friendIds = new ArrayList<>();
+    private String flexedRankScope; // Global, Country, University, Company
+    private String flexedRankTimeframe; // xp, weeklyXp, monthlyXp
     private boolean unlimitedChallengeSlots;
     private List<String> customCategories = new ArrayList<>();
     private List<String> customActions = new ArrayList<>();
@@ -111,6 +121,38 @@ public class UserProfile {
         this.xp = xp;
     }
 
+    public long getWeeklyXp() {
+        return weeklyXp;
+    }
+
+    public void setWeeklyXp(long weeklyXp) {
+        this.weeklyXp = weeklyXp;
+    }
+
+    public long getMonthlyXp() {
+        return monthlyXp;
+    }
+
+    public void setMonthlyXp(long monthlyXp) {
+        this.monthlyXp = monthlyXp;
+    }
+
+    public String getLastXpUpdateWeek() {
+        return lastXpUpdateWeek;
+    }
+
+    public void setLastXpUpdateWeek(String lastXpUpdateWeek) {
+        this.lastXpUpdateWeek = lastXpUpdateWeek;
+    }
+
+    public String getLastXpUpdateMonth() {
+        return lastXpUpdateMonth;
+    }
+
+    public void setLastXpUpdateMonth(String lastXpUpdateMonth) {
+        this.lastXpUpdateMonth = lastXpUpdateMonth;
+    }
+
     public int getLevel() {
         return level;
     }
@@ -157,6 +199,54 @@ public class UserProfile {
 
     public void setEquippedTitleId(String equippedTitleId) {
         this.equippedTitleId = equippedTitleId;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getUniversity() {
+        return university;
+    }
+
+    public void setUniversity(String university) {
+        this.university = university;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public List<String> getFriendIds() {
+        return friendIds;
+    }
+
+    public void setFriendIds(List<String> friendIds) {
+        this.friendIds = friendIds;
+    }
+
+    public String getFlexedRankScope() {
+        return flexedRankScope;
+    }
+
+    public void setFlexedRankScope(String flexedRankScope) {
+        this.flexedRankScope = flexedRankScope;
+    }
+
+    public String getFlexedRankTimeframe() {
+        return flexedRankTimeframe;
+    }
+
+    public void setFlexedRankTimeframe(String flexedRankTimeframe) {
+        this.flexedRankTimeframe = flexedRankTimeframe;
     }
 
     public boolean isUnlimitedChallengeSlots() {

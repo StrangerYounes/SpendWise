@@ -30,6 +30,8 @@ public class ProfileCustomizationFragment extends Fragment {
     private ProfileCustomizationViewModel viewModel;
     private CosmeticRewardAdapter framesAdapter;
     private CosmeticRewardAdapter titlesAdapter;
+    private String[] scopes = {"None", "Global", "Country", "University", "Company"};
+    private String[] timeframes = {"All-Time", "Weekly", "Monthly"};
 
     private final androidx.activity.result.ActivityResultLauncher<android.content.Intent> cropImage =
             registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
@@ -91,10 +93,23 @@ public class ProfileCustomizationFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(ProfileCustomizationViewModel.class);
 
         setupRecyclerViews();
+        setupFlexSpinners();
 
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
             if (profile != null) {
                 binding.displayNameInput.setText(profile.getDisplayName());
+                binding.countryInput.setText(profile.getCountry());
+                binding.universityInput.setText(profile.getUniversity());
+                binding.companyInput.setText(profile.getCompany());
+
+                String currentScope = profile.getFlexedRankScope() != null ? profile.getFlexedRankScope() : "None";
+                binding.flexScopeSpinner.setText(currentScope, false);
+
+                String timeframe = "All-Time";
+                if ("weeklyXp".equals(profile.getFlexedRankTimeframe())) timeframe = "Weekly";
+                else if ("monthlyXp".equals(profile.getFlexedRankTimeframe())) timeframe = "Monthly";
+                binding.flexTimeframeSpinner.setText(timeframe, false);
+
                 com.corner.takecontrol.util.ImageLoader.loadProfileImage(profile.getEncryptedPhoto(), profile.getPhotoUrl(), binding.profileImage, R.drawable.ic_streak);
 
                 String frameId = profile.getEquippedFrameId();
@@ -110,7 +125,19 @@ public class ProfileCustomizationFragment extends Fragment {
 
         binding.saveProfileButton.setOnClickListener(v -> {
             String newName = binding.displayNameInput.getText().toString();
-            viewModel.updateDisplayName(newName);
+            String country = binding.countryInput.getText().toString();
+            String university = binding.universityInput.getText().toString();
+            String company = binding.companyInput.getText().toString();
+            
+            String flexScope = binding.flexScopeSpinner.getText().toString();
+            String flexTimeframe = binding.flexTimeframeSpinner.getText().toString();
+            String timeframeKey = "xp";
+            if ("Weekly".equals(flexTimeframe)) timeframeKey = "weeklyXp";
+            else if ("Monthly".equals(flexTimeframe)) timeframeKey = "monthlyXp";
+
+            viewModel.updateProfileInfo(newName, country, university, company);
+            viewModel.updateFlexedRank(flexScope.equals("None") ? null : flexScope, timeframeKey);
+
             Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show();
         });
 
@@ -173,6 +200,14 @@ public class ProfileCustomizationFragment extends Fragment {
             });
         }
         builder.setNegativeButton(R.string.cancel, null).show();
+    }
+
+    private void setupFlexSpinners() {
+        android.widget.ArrayAdapter<String> scopeAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, scopes);
+        binding.flexScopeSpinner.setAdapter(scopeAdapter);
+
+        android.widget.ArrayAdapter<String> timeframeAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, timeframes);
+        binding.flexTimeframeSpinner.setAdapter(timeframeAdapter);
     }
 
     private void setupRecyclerViews() {

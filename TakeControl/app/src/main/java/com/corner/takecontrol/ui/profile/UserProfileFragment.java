@@ -123,6 +123,29 @@ public class UserProfileFragment extends Fragment {
         binding.currentStreakText.setText(profile.getCurrentStreak() + " days");
         binding.longestStreakText.setText(profile.getLongestStreak() + " days");
 
+        if (profile.getFlexedRankScope() != null && profile.getFlexedRankTimeframe() != null) {
+            userRepository.getUserRank(profile.getId(), profile.getFlexedRankScope(), profile.getFlexedRankTimeframe(), new RepositoryCallback<Integer>() {
+                @Override
+                public void onSuccess(Integer rank) {
+                    if (isAdded()) {
+                        binding.flexedRankCard.setVisibility(View.VISIBLE);
+                        String timeframeLabel = "All-Time";
+                        if ("weeklyXp".equals(profile.getFlexedRankTimeframe())) timeframeLabel = "Weekly";
+                        else if ("monthlyXp".equals(profile.getFlexedRankTimeframe())) timeframeLabel = "Monthly";
+                        
+                        binding.flexedRankText.setText(String.format(java.util.Locale.US, "#%d %s %s", rank, profile.getFlexedRankScope(), timeframeLabel));
+                    }
+                }
+
+                @Override
+                public void onError(String message) {
+                    if (isAdded()) binding.flexedRankCard.setVisibility(View.GONE);
+                }
+            });
+        } else {
+            binding.flexedRankCard.setVisibility(View.GONE);
+        }
+
         binding.achievementsChipGroup.removeAllViews();
         if (profile.getAchievements() != null) {
             for (String achId : profile.getAchievements()) {
