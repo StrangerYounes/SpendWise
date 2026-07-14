@@ -146,8 +146,16 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                     btn.setText(R.string.undo);
                     btn.setOnClickListener(v -> {
                         if (progress != null) {
-                            progress.setCompleted(false);
-                            listener.onComplete(task, progress);
+                            TaskProgress updatedProgress = new TaskProgress(
+                                    progress.getUserId(),
+                                    progress.getTaskId(),
+                                    progress.getPeriodKey(),
+                                    0, // Reset value
+                                    false, // NOT COMPLETED
+                                    "NORMAL"
+                            );
+                            updatedProgress.setId(progress.getId());
+                            listener.onComplete(task, updatedProgress);
                         }
                     });
                 } else {
@@ -223,10 +231,16 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                     .setPositiveButton(R.string.reset, (d, w) -> {
                         dialog.dismiss();
                         if (progress != null) {
-                            progress.setValue(0);
-                            progress.setCompleted(false);
-                            progress.setStatus("NORMAL");
-                            listener.onResetProgress(task, progress);
+                            TaskProgress resetProgress = new TaskProgress(
+                                    progress.getUserId(),
+                                    progress.getTaskId(),
+                                    progress.getPeriodKey(),
+                                    0,
+                                    false,
+                                    "NORMAL"
+                            );
+                            resetProgress.setId(progress.getId());
+                            listener.onResetProgress(task, resetProgress);
                         }
                     })
                     .setNegativeButton(R.string.cancel, null)

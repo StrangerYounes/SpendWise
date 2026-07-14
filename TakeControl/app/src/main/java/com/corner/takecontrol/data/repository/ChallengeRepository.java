@@ -469,6 +469,35 @@ public class ChallengeRepository {
                 });
     }
 
+    public void removeProgressPostFromFeed(String challengeId, String userId, String taskId, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .collection(SUBCOLLECTION_FEED)
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("type", "PROGRESS")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+                    boolean found = false;
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String docTaskId = doc.getString("taskId");
+                        if ((docTaskId != null && docTaskId.equals(taskId)) || (docTaskId == null && doc.getString("content") != null && doc.getString("content").contains("completed"))) {
+                            batch.delete(doc.getReference());
+                            found = true;
+                        }
+                    }
+                    if (found) {
+                        batch.commit()
+                                .addOnSuccessListener(v -> { if (callback != null) callback.onSuccess(null); })
+                                .addOnFailureListener(e -> { if (callback != null) callback.onError(e.getMessage()); });
+                    } else {
+                        if (callback != null) callback.onSuccess(null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
     public ListenerRegistration listenToChallengeFeed(String challengeId, RepositoryCallback<List<com.corner.takecontrol.data.model.ChallengePost>> callback) {
         return firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_FEED)

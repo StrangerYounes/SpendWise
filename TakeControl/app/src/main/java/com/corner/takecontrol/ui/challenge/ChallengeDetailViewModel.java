@@ -187,6 +187,24 @@ public class ChallengeDetailViewModel extends ViewModel {
         final boolean wasLate = oldProgress != null && "LATE".equals(oldProgress.getStatus());
         final boolean isNowLate = "LATE".equals(progress.getStatus());
 
+        // Update local list immediately to handle fast consecutive clicks
+        if (currentList != null) {
+            List<TaskProgress> updatedList = new java.util.ArrayList<>(currentList);
+            boolean replaced = false;
+            for (int i = 0; i < updatedList.size(); i++) {
+                TaskProgress p = updatedList.get(i);
+                if (p.getTaskId().equals(progress.getTaskId()) && 
+                    p.getUserId().equals(progress.getUserId()) && 
+                    p.getPeriodKey().equals(progress.getPeriodKey())) {
+                    updatedList.set(i, progress);
+                    replaced = true;
+                    break;
+                }
+            }
+            if (!replaced) updatedList.add(progress);
+            progressList.setValue(updatedList);
+        }
+
         challengeRepository.saveProgress(challengeId, progress, new RepositoryCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
@@ -203,7 +221,9 @@ public class ChallengeDetailViewModel extends ViewModel {
                     });
                 } else if (wasCompleted && !isNowCompleted) {
                     userRepository.deductTaskCompletion(userId, task, wasLate, new RepositoryCallback<>() {
-                        @Override public void onSuccess(Void result) {}
+                        @Override public void onSuccess(Void result) {
+                            challengeRepository.removeProgressPostFromFeed(challengeId, userId, progress.getTaskId(), null);
+                        }
                         @Override public void onError(String message) {}
                     });
                 }
