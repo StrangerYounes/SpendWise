@@ -100,6 +100,7 @@ public class UserRepository {
                     if (Objects.equals(yesterday, lastDate)) {
                         streak++;
                     } else {
+                        // If it's not yesterday and not today (checked above), it's a break in streak or first time
                         streak = 1;
                     }
                     profile.setCurrentStreak(streak);
@@ -185,14 +186,26 @@ public class UserRepository {
                 // Deduct XP
                 long xpReward = XpUtil.getXpReward(task.getTaskType(), wasLate);
                 profile.setXp(Math.max(0, profile.getXp() - xpReward));
+
+                // Deduct Weekly and Monthly XP only if the current profile period matches
+                Calendar cal = Calendar.getInstance();
+                String currentWeek = cal.get(Calendar.YEAR) + "-W" + cal.get(Calendar.WEEK_OF_YEAR);
+                String currentMonth = cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH) + 1);
+
+                if (currentWeek.equals(profile.getLastXpUpdateWeek())) {
+                    profile.setWeeklyXp(Math.max(0, profile.getWeeklyXp() - xpReward));
+                }
+                if (currentMonth.equals(profile.getLastXpUpdateMonth())) {
+                    profile.setMonthlyXp(Math.max(0, profile.getMonthlyXp() - xpReward));
+                }
+
                 profile.setLevel(XpUtil.calculateLevel(profile.getXp()));
 
                 // Update Statistics (Deduct)
                 statsRepository.updateStats(userId, task, task.getTargetValue(), false, null);
 
                 // Note: We don't deduct streaks because users might have completed other tasks
-                // but we could if this was the ONLY task completed today. 
-                // However, for simplicity and to prevent frustration, we'll keep the streak.
+                // or we want to avoid frustration. We keep the streak.
 
                 firestore.collection("users").document(userId)
                         .set(profile)

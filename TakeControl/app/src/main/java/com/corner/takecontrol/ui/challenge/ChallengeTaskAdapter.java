@@ -38,6 +38,10 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
         void onResetProgress(ChallengeTask task, TaskProgress progress);
 
         void onStartTimer(ChallengeTask task, TaskProgress progress);
+
+        void onRewardExp(ChallengeTask task, boolean isLate);
+
+        void onDeductExp(ChallengeTask task, boolean wasLate);
     }
 
     private final List<ChallengeTask> tasks = new ArrayList<>();
@@ -146,25 +150,22 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                     btn.setText(R.string.undo);
                     btn.setOnClickListener(v -> {
                         if (progress != null) {
-                            TaskProgress updatedProgress = new TaskProgress(
-                                    progress.getUserId(),
-                                    progress.getTaskId(),
-                                    progress.getPeriodKey(),
-                                    0, // Reset value
-                                    false, // NOT COMPLETED
-                                    "NORMAL"
-                            );
-                            updatedProgress.setId(progress.getId());
+                            TaskProgress updatedProgress = progress.copy();
+                            updatedProgress.setCompleted(false);
+                            updatedProgress.setValue(0);
+                            updatedProgress.setStatus("NORMAL");
+                            listener.onDeductExp(task, "LATE".equals(progress.getStatus()));
                             listener.onComplete(task, updatedProgress);
                         }
                     });
                 } else {
                     btn.setText(R.string.mark_complete);
                     btn.setOnClickListener(v -> {
-                        TaskProgress newProgress = progress != null ? progress
+                        TaskProgress newProgress = progress != null ? progress.copy()
                                 : new TaskProgress(getUserId(), task.getId(), periodKey, 0, true, determineStatus(task));
                         newProgress.setCompleted(true);
                         newProgress.setStatus(determineStatus(task));
+                        listener.onRewardExp(task, "LATE".equals(newProgress.getStatus()));
                         listener.onComplete(task, newProgress);
                     });
                 }
@@ -204,15 +205,18 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                         double increment = Double.parseDouble(valueStr);
                         double newValue = Math.max(0, currentVal + increment);
 
-                        TaskProgress newProgress = progress != null ? progress
+                        TaskProgress newProgress = progress != null ? progress.copy()
                                 : new TaskProgress(getUserId(), task.getId(), periodKey, newValue, false, "NORMAL");
                         newProgress.setValue(newValue);
+                        boolean wasCompleted = progress != null && progress.isCompleted();
                         boolean isNowComplete = newValue >= task.getTargetValue();
                         newProgress.setCompleted(isNowComplete);
-                        if (isNowComplete && (progress == null || !progress.isCompleted())) {
+                        if (isNowComplete && !wasCompleted) {
                             newProgress.setStatus(determineStatus(task));
-                        } else if (!isNowComplete) {
+                            listener.onRewardExp(task, "LATE".equals(newProgress.getStatus()));
+                        } else if (!isNowComplete && wasCompleted) {
                             newProgress.setStatus("NORMAL");
+                            listener.onDeductExp(task, "LATE".equals(progress.getStatus()));
                         }
 
                         listener.onLogProgress(task, newProgress, increment);
@@ -231,15 +235,13 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                     .setPositiveButton(R.string.reset, (d, w) -> {
                         dialog.dismiss();
                         if (progress != null) {
-                            TaskProgress resetProgress = new TaskProgress(
-                                    progress.getUserId(),
-                                    progress.getTaskId(),
-                                    progress.getPeriodKey(),
-                                    0,
-                                    false,
-                                    "NORMAL"
-                            );
-                            resetProgress.setId(progress.getId());
+                            TaskProgress resetProgress = progress.copy();
+                            resetProgress.setCompleted(false);
+                            resetProgress.setValue(0);
+                            resetProgress.setStatus("NORMAL");
+                            if (progress.isCompleted()) {
+                                listener.onDeductExp(task, "LATE".equals(progress.getStatus()));
+                            }
                             listener.onResetProgress(task, resetProgress);
                         }
                     })

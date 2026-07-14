@@ -72,12 +72,29 @@ public class ChallengeDetailFragment extends Fragment {
                 dialog.setOnTimerFinishedListener((t, p, minutes) -> {
                     double currentVal = p.getValue();
                     double newValue = currentVal + minutes;
+                    boolean wasCompleted = p.isCompleted();
                     p.setValue(newValue);
-                    p.setCompleted(newValue >= t.getTargetValue());
+                    boolean isNowComplete = newValue >= t.getTargetValue();
+                    p.setCompleted(isNowComplete);
+                    
+                    if (isNowComplete && !wasCompleted) {
+                        viewModel.rewardExp(t, false); // Timer is usually on-time or handled specifically
+                    }
+                    
                     viewModel.saveProgress(p);
                     Toast.makeText(requireContext(), R.string.focus_session_finished, Toast.LENGTH_SHORT).show();
                 });
                 dialog.show(getChildFragmentManager(), "FocusTimer");
+            }
+
+            @Override
+            public void onRewardExp(ChallengeTask task, boolean isLate) {
+                viewModel.rewardExp(task, isLate);
+            }
+
+            @Override
+            public void onDeductExp(ChallengeTask task, boolean wasLate) {
+                viewModel.deductExp(task, wasLate);
             }
         });
 

@@ -169,25 +169,8 @@ public class ChallengeDetailViewModel extends ViewModel {
     public void saveProgress(TaskProgress progress) {
         if (challengeId == null) return;
 
-        TaskProgress oldProgress = null;
-        List<TaskProgress> currentList = progressList.getValue();
-        if (currentList != null) {
-            for (TaskProgress p : currentList) {
-                if (p.getTaskId().equals(progress.getTaskId()) && 
-                    p.getUserId().equals(progress.getUserId()) && 
-                    p.getPeriodKey().equals(progress.getPeriodKey())) {
-                    oldProgress = p;
-                    break;
-                }
-            }
-        }
-
-        final boolean wasCompleted = oldProgress != null && oldProgress.isCompleted();
-        final boolean isNowCompleted = progress.isCompleted();
-        final boolean wasLate = oldProgress != null && "LATE".equals(oldProgress.getStatus());
-        final boolean isNowLate = "LATE".equals(progress.getStatus());
-
         // Update local list immediately to handle fast consecutive clicks
+        List<TaskProgress> currentList = progressList.getValue();
         if (currentList != null) {
             List<TaskProgress> updatedList = new java.util.ArrayList<>(currentList);
             boolean replaced = false;
@@ -209,24 +192,28 @@ public class ChallengeDetailViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 actionComplete.setValue(true);
-                if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
-                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                ChallengeTask task = findTaskById(progress.getTaskId());
-                if (task == null) return;
+            }
+            @Override public void onError(String message) { error.setValue(message); }
+        });
+    }
 
-                if (!wasCompleted && isNowCompleted) {
-                    userRepository.rewardTaskCompletion(userId, task, isNowLate, new RepositoryCallback<>() {
-                        @Override public void onSuccess(Void result) { postProgressToFeed(task, isNowLate); }
-                        @Override public void onError(String message) {}
-                    });
-                } else if (wasCompleted && !isNowCompleted) {
-                    userRepository.deductTaskCompletion(userId, task, wasLate, new RepositoryCallback<>() {
-                        @Override public void onSuccess(Void result) {
-                            challengeRepository.removeProgressPostFromFeed(challengeId, userId, progress.getTaskId(), null);
-                        }
-                        @Override public void onError(String message) {}
-                    });
-                }
+    public void rewardExp(ChallengeTask task, boolean isLate) {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        
+        userRepository.rewardTaskCompletion(userId, task, isLate, new RepositoryCallback<>() {
+            @Override public void onSuccess(Void result) { postProgressToFeed(task, isLate); }
+            @Override public void onError(String message) { error.setValue(message); }
+        });
+    }
+
+    public void deductExp(ChallengeTask task, boolean wasLate) {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        
+        userRepository.deductTaskCompletion(userId, task, wasLate, new RepositoryCallback<>() {
+            @Override public void onSuccess(Void result) {
+                challengeRepository.removeProgressPostFromFeed(challengeId, userId, task.getId(), null);
             }
             @Override public void onError(String message) { error.setValue(message); }
         });

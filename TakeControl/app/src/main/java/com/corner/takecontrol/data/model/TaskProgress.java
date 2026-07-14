@@ -97,4 +97,11 @@ public class TaskProgress {
     public static String buildDocumentId(String userId, String taskId, String periodKey) {
         return userId + "_" + taskId + "_" + periodKey;
     }
+
+    public TaskProgress copy() {
+        TaskProgress copy = new TaskProgress(userId, taskId, periodKey, value, completed, status);
+        copy.setId(this.id);
+        copy.setUpdatedAt(this.updatedAt);
+        return copy;
+    }
 }
