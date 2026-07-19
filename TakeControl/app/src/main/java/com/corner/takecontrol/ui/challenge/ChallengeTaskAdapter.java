@@ -19,6 +19,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -161,12 +162,16 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                 } else {
                     btn.setText(R.string.mark_complete);
                     btn.setOnClickListener(v -> {
-                        TaskProgress newProgress = progress != null ? progress.copy()
-                                : new TaskProgress(getUserId(), task.getId(), periodKey, 0, true, determineStatus(task));
-                        newProgress.setCompleted(true);
-                        newProgress.setStatus(determineStatus(task));
-                        listener.onRewardExp(task, "LATE".equals(newProgress.getStatus()));
-                        listener.onComplete(task, newProgress);
+                        if (task.isVerifiable()) {
+                            showVerificationDialog(holder.itemView, task, progress, periodKey);
+                        } else {
+                            TaskProgress newProgress = progress != null ? progress.copy()
+                                    : new TaskProgress(getUserId(), task.getId(), periodKey, 0, true, determineStatus(task));
+                            newProgress.setCompleted(true);
+                            newProgress.setStatus(determineStatus(task));
+                            listener.onRewardExp(task, "LATE".equals(newProgress.getStatus()));
+                            listener.onComplete(task, newProgress);
+                        }
                     });
                 }
             } else {
@@ -180,6 +185,39 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
                 }
             }
         }
+    }
+
+    private void showVerificationDialog(View anchor, ChallengeTask task, TaskProgress progress, String periodKey) {
+        View dialogView = LayoutInflater.from(anchor.getContext()).inflate(R.layout.dialog_log_progress, null);
+        TextView progressInfoText = dialogView.findViewById(R.id.currentProgressText);
+        TextInputLayout valueLayout = dialogView.findViewById(R.id.logValueLayout);
+        TextInputEditText valueInput = dialogView.findViewById(R.id.logValueInput);
+        View resetButton = dialogView.findViewById(R.id.resetButton);
+
+        progressInfoText.setText("This task requires a secret verification code from the challenge creator.");
+        valueLayout.setHint("Enter Secret Code");
+        valueInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        resetButton.setVisibility(View.GONE);
+        dialogView.findViewById(R.id.logMessageText).setVisibility(View.GONE);
+
+        new MaterialAlertDialogBuilder(anchor.getContext())
+                .setTitle("Verify Completion")
+                .setView(dialogView)
+                .setPositiveButton("Verify", (dialogInterface, which) -> {
+                    String enteredCode = valueInput.getText() != null ? valueInput.getText().toString().trim() : "";
+                    if (enteredCode.equals(task.getVerificationCode())) {
+                        TaskProgress newProgress = progress != null ? progress.copy()
+                                : new TaskProgress(getUserId(), task.getId(), periodKey, 0, true, determineStatus(task));
+                        newProgress.setCompleted(true);
+                        newProgress.setStatus(determineStatus(task));
+                        listener.onRewardExp(task, "LATE".equals(newProgress.getStatus()));
+                        listener.onComplete(task, newProgress);
+                    } else {
+                        Toast.makeText(anchor.getContext(), "Incorrect verification code", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void showLogDialog(View anchor, ChallengeTask task, TaskProgress progress, String periodKey) {
@@ -254,6 +292,12 @@ public class ChallengeTaskAdapter extends RecyclerView.Adapter<ChallengeTaskAdap
 
     private String buildMeta(ChallengeTask task, String periodKey) {
         StringBuilder sb = new StringBuilder();
+        if (task.isOptional()) {
+            sb.append("[Optional] ");
+        }
+        if (task.isVerifiable()) {
+            sb.append("[Verifiable] ");
+        }
         sb.append(PeriodKeyUtil.getPeriodLabel(task.getFrequencyEnum(), periodKey));
         sb.append(" · ");
         sb.append(task.getFrequencyEnum().name().toLowerCase(Locale.US));

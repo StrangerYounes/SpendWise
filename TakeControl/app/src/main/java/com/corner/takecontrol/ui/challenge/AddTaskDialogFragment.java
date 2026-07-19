@@ -20,6 +20,7 @@ import com.corner.takecontrol.data.model.TaskType;
 import com.corner.takecontrol.data.model.UserProfile;
 import com.corner.takecontrol.data.repository.UserRepository;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -82,6 +83,25 @@ public class AddTaskDialogFragment extends DialogFragment {
         View advancedOptionsContainer = view.findViewById(R.id.advancedOptionsContainer);
         AutoCompleteTextView categoryInput = view.findViewById(R.id.categoryInput);
         AutoCompleteTextView actionInput = view.findViewById(R.id.actionInput);
+        MaterialCheckBox optionalCheckbox = view.findViewById(R.id.optionalTaskCheckbox);
+        MaterialCheckBox verifiableCheckbox = view.findViewById(R.id.verifiableTaskCheckbox);
+        TextInputLayout verificationLayout = view.findViewById(R.id.verificationCodeLayout);
+        TextInputEditText verificationInput = view.findViewById(R.id.verificationCodeInput);
+
+        String[] frequencies = getResources().getStringArray(R.array.task_frequencies);
+        String[] types = getResources().getStringArray(R.array.task_types);
+
+        verifiableCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            verificationLayout.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            if (isChecked) {
+                typeSpinner.setText(types[0], false); // Force checkmark type
+                typeSpinner.setEnabled(false);
+                targetLayout.setVisibility(View.GONE);
+                unitLayout.setVisibility(View.GONE);
+            } else {
+                typeSpinner.setEnabled(true);
+            }
+        });
 
         advancedOptionsBtn.setOnClickListener(v -> {
             boolean isVisible = advancedOptionsContainer.getVisibility() == View.VISIBLE;
@@ -109,12 +129,10 @@ public class AddTaskDialogFragment extends DialogFragment {
             });
         }
 
-        String[] frequencies = getResources().getStringArray(R.array.task_frequencies);
         ArrayAdapter<String> frequencyAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, frequencies);
         frequencySpinner.setAdapter(frequencyAdapter);
         frequencySpinner.setText(frequencies[0], false);
 
-        String[] types = getResources().getStringArray(R.array.task_types);
         ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, types);
         typeSpinner.setAdapter(typeAdapter);
         typeSpinner.setText(types[0], false);
@@ -155,11 +173,19 @@ public class AddTaskDialogFragment extends DialogFragment {
                 }
             }
 
-            if (!TextUtils.isEmpty(taskToEdit.getManualCategory()) || !TextUtils.isEmpty(taskToEdit.getManualAction())) {
+            if (!TextUtils.isEmpty(taskToEdit.getManualCategory()) || !TextUtils.isEmpty(taskToEdit.getManualAction())
+                    || taskToEdit.isOptional() || taskToEdit.isVerifiable()) {
                 advancedOptionsContainer.setVisibility(View.VISIBLE);
                 advancedOptionsBtn.setIconResource(R.drawable.ic_expand_less);
                 categoryInput.setText(taskToEdit.getManualCategory());
                 actionInput.setText(taskToEdit.getManualAction());
+                optionalCheckbox.setChecked(taskToEdit.isOptional());
+                verifiableCheckbox.setChecked(taskToEdit.isVerifiable());
+                if (taskToEdit.isVerifiable()) {
+                    verificationLayout.setVisibility(View.VISIBLE);
+                    verificationInput.setText(taskToEdit.getVerificationCode());
+                    typeSpinner.setEnabled(false);
+                }
             }
             
             boolean checkmark = taskToEdit.getTaskTypeEnum() == TaskType.CHECKMARK;
@@ -211,6 +237,11 @@ public class AddTaskDialogFragment extends DialogFragment {
                     task.setExecutionTime(timeInput.getText().toString());
                     task.setManualCategory(categoryInput.getText().toString().trim());
                     task.setManualAction(actionInput.getText().toString().trim());
+                    task.setOptional(optionalCheckbox.isChecked());
+                    if (verifiableCheckbox.isChecked()) {
+                        task.setVerificationCode(verificationInput.getText().toString().trim());
+                        task.setTaskTypeEnum(TaskType.CHECKMARK);
+                    }
                     
                     // Save new labels to profile if changed
                     if (currentUserProfile != null) {

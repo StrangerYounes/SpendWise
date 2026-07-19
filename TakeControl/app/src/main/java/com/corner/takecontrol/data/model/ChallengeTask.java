@@ -20,6 +20,8 @@ public class ChallengeTask {
     private String challengeId;
     private String manualCategory;
     private String manualAction;
+    private boolean optional;
+    private String verificationCode;
 
     public ChallengeTask() {
     }
@@ -151,5 +153,25 @@ public class ChallengeTask {
 
     public void setManualAction(String manualAction) {
         this.manualAction = manualAction;
+    }
+
+    public boolean isOptional() {
+        return optional;
+    }
+
+    public void setOptional(boolean optional) {
+        this.optional = optional;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public boolean isVerifiable() {
+        return verificationCode != null && !verificationCode.trim().isEmpty();
     }
 }

@@ -44,6 +44,9 @@ public final class ProgressCalculator {
         Map<String, TaskProgress> progressMap = mapProgressForUser(progressList, userId);
 
         for (ChallengeTask task : tasks) {
+            if (task.isOptional()) {
+                continue;
+            }
             TaskFrequency frequency = task.getFrequencyEnum();
             List<String> periodKeys = PeriodKeyUtil.getPeriodKeysBetween(frequency, start, end);
             expected += periodKeys.size();
