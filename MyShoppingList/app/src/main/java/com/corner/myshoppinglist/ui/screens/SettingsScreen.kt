@@ -81,18 +81,6 @@ fun SettingsScreen(
                 modifier = Modifier.clickable { onNavigateToLibrary() }
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Button(
-                onClick = { /* Reset data placeholder */ },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Reset All Data")
-            }
-
             if (showCurrencyDialog) {
                 val currencies = listOf("$", "€", "£", "¥", "Rp")
                 AlertDialog(

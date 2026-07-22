@@ -115,7 +115,7 @@ fun ListDetailScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(items, key = { it.id }) { item ->
@@ -340,6 +340,14 @@ fun ShoppingItemRow(
                 style = MaterialTheme.typography.bodyLarge,
                 textDecoration = if (item.purchased) TextDecoration.LineThrough else null
             )
+            if (!item.notes.isNullOrBlank()) {
+                Text(
+                    text = item.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 item.estimatedPrice?.let {
                     Text(

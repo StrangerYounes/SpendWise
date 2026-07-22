@@ -82,7 +82,18 @@ fun HomeScreen(
                     items(searchedItems, key = { "item_${it.id}" }) { item ->
                         ListItem(
                             headlineContent = { Text(item.itemName) },
-                            supportingContent = { Text("In list: #${item.listId}") },
+                            supportingContent = {
+                                Column {
+                                    if (!item.notes.isNullOrBlank()) {
+                                        Text(
+                                            text = item.notes,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                        )
+                                    }
+                                    Text("In list: #${item.listId}")
+                                }
+                            },
                             trailingContent = {
                                 if (item.purchased) Icon(Icons.Default.Check, contentDescription = null)
                             },
@@ -209,77 +220,75 @@ fun ShoppingListCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = item.shoppingList.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = item.shoppingList.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                if (item.shoppingList.isCompleted) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text("Completed") },
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
-                    if (item.shoppingList.isCompleted) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text("Completed") }
+                }
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Actions")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Rename") },
+                            onClick = {
+                                onRename()
+                                showMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Duplicate") },
+                            onClick = {
+                                onDuplicate()
+                                showMenu = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete") },
+                            onClick = {
+                                onDelete()
+                                showMenu = false
+                            }
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = dateFormat.format(Date(item.shoppingList.createdDate)),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("${item.itemCount} items")
-                    val totalToShow = if (item.shoppingList.isCompleted) item.actualTotal else item.estimatedTotal
-                    val label = if (item.shoppingList.isCompleted) "Total Spent: " else "Est. Total: "
-                    
-                    Text(
-                        text = "$label$currencySymbol${"%.2f".format(Locale.US, totalToShow)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
             }
-            
-            Box(modifier = Modifier.align(Alignment.TopEnd)) {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Actions")
-                }
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Rename") },
-                        onClick = {
-                            onRename()
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Duplicate") },
-                        onClick = {
-                            onDuplicate()
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
-                            onDelete()
-                            showMenu = false
-                        }
-                    )
-                }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = dateFormat.format(Date(item.shoppingList.createdDate)),
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("${item.itemCount} items")
+                val totalToShow = if (item.shoppingList.isCompleted) item.actualTotal else item.estimatedTotal
+                val label = if (item.shoppingList.isCompleted) "Total Spent: " else "Est. Total: "
+                
+                Text(
+                    text = "$label$currencySymbol${"%.2f".format(Locale.US, totalToShow)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
