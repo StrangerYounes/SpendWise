@@ -223,28 +223,32 @@ fun ShoppingListCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = item.shoppingList.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                item.storeName?.let {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = it,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        color = MaterialTheme.colorScheme.primary
+                        text = item.shoppingList.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                }
-                if (item.shoppingList.isCompleted) {
-                    SuggestionChip(
-                        onClick = {},
-                        label = { Text("Completed") },
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = dateFormat.format(Date(item.shoppingList.createdDate)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        item.storeName?.let {
+                            Text(
+                                text = " • $it",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
                 Box {
                     IconButton(onClick = { showMenu = true }) {
@@ -278,24 +282,44 @@ fun ShoppingListCard(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = dateFormat.format(Date(item.shoppingList.createdDate)),
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("${item.itemCount} items")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${item.itemCount} items",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (item.shoppingList.isCompleted) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(
+                                text = "Completed",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+
                 val totalToShow = if (item.shoppingList.isCompleted) item.actualTotal else item.estimatedTotal
                 val label = if (item.shoppingList.isCompleted) "Total Spent: " else "Est. Total: "
                 
                 Text(
                     text = "$label$currencySymbol${"%.2f".format(Locale.US, totalToShow)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (item.shoppingList.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
             }
         }
