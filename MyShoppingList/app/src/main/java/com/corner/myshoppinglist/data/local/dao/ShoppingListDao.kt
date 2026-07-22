@@ -9,7 +9,8 @@ interface ShoppingListDao {
     @Query("""
         SELECT sl.*, 
         COUNT(si.id) as itemCount, 
-        SUM(COALESCE(si.estimatedPrice, 0) * si.quantity) as estimatedTotal
+        SUM(COALESCE(si.estimatedPrice, 0) * si.quantity) as estimatedTotal,
+        SUM(CASE WHEN si.purchased THEN COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity ELSE 0 END) as actualTotal
         FROM shopping_lists sl
         LEFT JOIN shopping_items si ON sl.id = si.listId
         GROUP BY sl.id
@@ -32,7 +33,8 @@ interface ShoppingListDao {
     @Query("""
         SELECT sl.*, 
         COUNT(si.id) as itemCount, 
-        SUM(COALESCE(si.estimatedPrice, 0) * si.quantity) as estimatedTotal
+        SUM(COALESCE(si.estimatedPrice, 0) * si.quantity) as estimatedTotal,
+        SUM(CASE WHEN si.purchased THEN COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity ELSE 0 END) as actualTotal
         FROM shopping_lists sl
         LEFT JOIN shopping_items si ON sl.id = si.listId
         WHERE sl.name LIKE '%' || :query || '%'
@@ -45,5 +47,6 @@ interface ShoppingListDao {
 data class ShoppingListWithDetails(
     @Embedded val shoppingList: ShoppingList,
     val itemCount: Int,
-    val estimatedTotal: Double
+    val estimatedTotal: Double,
+    val actualTotal: Double
 )

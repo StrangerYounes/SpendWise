@@ -11,10 +11,16 @@ class ShoppingRepository(
     private val shoppingListDao: ShoppingListDao,
     private val shoppingItemDao: ShoppingItemDao,
     private val masterItemDao: MasterItemDao,
-    private val photoDao: PhotoDao
+    private val photoDao: PhotoDao,
+    private val statsDao: StatsDao
 ) {
     // Shopping Lists
     val allShoppingLists: Flow<List<ShoppingListWithDetails>> = shoppingListDao.getAllShoppingListsWithDetails()
+    
+    // Stats
+    val itemStats: Flow<List<ItemStat>> = statsDao.getItemStats()
+    val expensiveItems: Flow<List<ExpensiveItem>> = statsDao.getMostExpensiveItems()
+    val spentPerMonth: Flow<List<PeriodStat>> = statsDao.getSpentPerMonth()
 
     fun searchShoppingLists(query: String): Flow<List<ShoppingListWithDetails>> =
         shoppingListDao.searchShoppingListsWithDetails(query)
@@ -63,6 +69,10 @@ class ShoppingRepository(
 
     suspend fun updateMasterItemManual(item: MasterItem) {
         masterItemDao.updateMasterItem(item)
+    }
+
+    suspend fun insertMasterItem(item: MasterItem) {
+        masterItemDao.insertMasterItem(item)
     }
 
     suspend fun deleteMasterItem(item: MasterItem) {

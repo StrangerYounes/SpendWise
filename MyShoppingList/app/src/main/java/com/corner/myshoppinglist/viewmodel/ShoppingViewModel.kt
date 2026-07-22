@@ -28,6 +28,16 @@ class ShoppingViewModel(
         .map { it?.currencySymbol ?: "$" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "$")
 
+    val itemStats = repository.itemStats.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
+    val expensiveItems = repository.expensiveItems.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
+    val spentPerMonth = repository.spentPerMonth.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
+
     init {
         viewModelScope.launch {
             _searchQuery.collectLatest { query ->

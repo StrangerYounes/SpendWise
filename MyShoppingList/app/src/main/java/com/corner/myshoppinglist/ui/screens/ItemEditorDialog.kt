@@ -54,7 +54,7 @@ fun ItemEditorDialog(
                         onValueChange = { quantity = it },
                         label = { Text("Qty") },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                     )
                     OutlinedTextField(
                         value = unit,
@@ -103,7 +103,7 @@ fun ItemEditorDialog(
                                 notes = notes.ifBlank { null },
                                 estimatedPrice = estPrice.toDoubleOrNull(),
                                 actualPrice = actPrice.toDoubleOrNull(),
-                                quantity = quantity.toIntOrNull() ?: 1,
+                                quantity = quantity.toDoubleOrNull() ?: 1.0,
                                 unit = unit.ifBlank { null }
                             )
                         )

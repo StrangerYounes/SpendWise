@@ -23,7 +23,7 @@ data class ShoppingItem(
     val itemName: String,
     val estimatedPrice: Double? = null,
     val actualPrice: Double? = null,
-    val quantity: Int = 1,
+    val quantity: Double = 1.0,
     val unit: String? = null,
     val purchased: Boolean = false,
     val orderIndex: Int = 0,

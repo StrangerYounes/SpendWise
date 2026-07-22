@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
@@ -27,6 +28,7 @@ fun MasterLibraryScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val currencySymbol by viewModel.currencySymbol.collectAsStateWithLifecycle()
     var editingItem by remember { mutableStateOf<MasterItem?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -38,6 +40,11 @@ fun MasterLibraryScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showAddDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Add New Item")
+            }
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -92,6 +99,60 @@ fun MasterLibraryScreen(
             }
         )
     }
+
+    if (showAddDialog) {
+        MasterItemAddDialog(
+            currencySymbol = currencySymbol,
+            onDismiss = { showAddDialog = false },
+            onSave = { name, price ->
+                viewModel.addMasterItem(name, price)
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun MasterItemAddDialog(
+    currencySymbol: String,
+    onDismiss: () -> Unit,
+    onSave: (String, Double) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New Item to Library") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Item Name") }
+                )
+                OutlinedTextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = { Text("Price ($currencySymbol)") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (name.isNotBlank()) {
+                    onSave(name, price.toDoubleOrNull() ?: 0.0)
+                }
+            }) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

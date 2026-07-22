@@ -36,7 +36,7 @@ class ListDetailViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val actualTotal: StateFlow<Double> = _items.map { items ->
-        items.sumOf { (it.actualPrice ?: 0.0) * it.quantity }
+        items.filter { it.purchased }.sumOf { (it.actualPrice ?: it.estimatedPrice ?: 0.0) * it.quantity }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     init {
@@ -69,7 +69,7 @@ class ListDetailViewModel(
     fun addItem(
         name: String,
         estimatedPrice: Double? = null,
-        quantity: Int = 1,
+        quantity: Double = 1.0,
         unit: String? = null,
         notes: String? = null
     ) {

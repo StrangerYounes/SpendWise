@@ -43,6 +43,12 @@ class MasterItemViewModel(
         }
     }
 
+    fun addMasterItem(name: String, price: Double) {
+        viewModelScope.launch {
+            repository.insertMasterItem(MasterItem(name = name, lastPrice = price, averagePrice = price))
+        }
+    }
+
     fun deleteMasterItem(item: MasterItem) {
         viewModelScope.launch {
             repository.deleteMasterItem(item)

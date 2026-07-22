@@ -34,6 +34,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToStats = {
+                    navController.navigate(Screen.Stats.route)
                 }
             )
         }
@@ -65,6 +68,15 @@ fun NavGraph(navController: NavHostController) {
                 factory = MasterItemViewModelFactory(repository, settingsRepository)
             )
             MasterLibraryScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.Stats.route) {
+            val viewModel: ShoppingViewModel = viewModel(
+                factory = ShoppingViewModelFactory(repository, settingsRepository)
+            )
+            StatsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )

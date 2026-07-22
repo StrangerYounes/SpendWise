@@ -23,7 +23,8 @@ import java.util.*
 fun HomeScreen(
     viewModel: ShoppingViewModel,
     onNavigateToDetail: (Long) -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToStats: () -> Unit
 ) {
     val shoppingLists by viewModel.shoppingLists.collectAsStateWithLifecycle()
     val searchedItems by viewModel.searchedItems.collectAsStateWithLifecycle()
@@ -37,6 +38,9 @@ fun HomeScreen(
             LargeTopAppBar(
                 title = { Text("My Shopping Lists") },
                 actions = {
+                    IconButton(onClick = onNavigateToStats) {
+                        Icon(Icons.Default.BarChart, contentDescription = "Statistics")
+                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
@@ -64,7 +68,7 @@ fun HomeScreen(
             ) {}
 
             LazyColumn(
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (searchQuery.isNotEmpty() && searchedItems.isNotEmpty()) {
@@ -235,8 +239,11 @@ fun ShoppingListCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("${item.itemCount} items")
+                    val totalToShow = if (item.shoppingList.isCompleted) item.actualTotal else item.estimatedTotal
+                    val label = if (item.shoppingList.isCompleted) "Total Spent: " else "Est. Total: "
+                    
                     Text(
-                        text = "Est. Total: $currencySymbol${"%.2f".format(Locale.US, item.estimatedTotal)}",
+                        text = "$label$currencySymbol${"%.2f".format(Locale.US, totalToShow)}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )

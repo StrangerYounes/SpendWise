@@ -357,7 +357,7 @@ fun ShoppingItemRow(
             }
         }
         Text(
-            text = "x${item.quantity}",
+            text = "x${"%.1f".format(Locale.US, item.quantity)}",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
@@ -374,7 +374,7 @@ fun ShoppingItemRow(
 @Composable
 fun AddItemBottomSheet(
     onDismiss: () -> Unit,
-    onAddItem: (String, Double?, Int, String?, String?) -> Unit,
+    onAddItem: (String, Double?, Double, String?, String?) -> Unit,
     currencySymbol: String,
     viewModel: ListDetailViewModel
 ) {
@@ -421,7 +421,7 @@ fun AddItemBottomSheet(
                                 .offset(x = (-8).dp),
                             trailingContent = {
                                 IconButton(onClick = {
-                                    onAddItem(suggestion.name, suggestion.lastPrice, 1, null, null)
+                                    onAddItem(suggestion.name, suggestion.lastPrice, 1.0, null, null)
                                 }) {
                                     Icon(Icons.Default.Check, contentDescription = "Add")
                                 }
@@ -438,7 +438,7 @@ fun AddItemBottomSheet(
                     onValueChange = { quantity = it },
                     label = { Text("Qty") },
                     modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
                 OutlinedTextField(
                     value = unit,
@@ -472,7 +472,7 @@ fun AddItemBottomSheet(
                         onAddItem(
                             itemName, 
                             estimatedPrice.toDoubleOrNull(),
-                            quantity.toIntOrNull() ?: 1,
+                            quantity.toDoubleOrNull() ?: 1.0,
                             unit.ifBlank { null },
                             notes.ifBlank { null }
                         )
