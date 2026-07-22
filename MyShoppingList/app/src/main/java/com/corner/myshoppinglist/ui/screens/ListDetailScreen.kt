@@ -1,10 +1,17 @@
 package com.corner.myshoppinglist.ui.screens
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,11 +20,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import com.corner.myshoppinglist.data.local.entities.Photo
 import com.corner.myshoppinglist.data.local.entities.ShoppingItem
 import com.corner.myshoppinglist.viewmodel.ListDetailViewModel
 import kotlinx.coroutines.launch
@@ -31,11 +46,26 @@ fun ListDetailScreen(
 ) {
     val shoppingList by viewModel.shoppingList.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
+    val photos by viewModel.photos.collectAsStateWithLifecycle()
     val estimatedTotal by viewModel.estimatedTotal.collectAsStateWithLifecycle()
     val actualTotal by viewModel.actualTotal.collectAsStateWithLifecycle()
     val currencySymbol by viewModel.currencySymbol.collectAsStateWithLifecycle()
     val stores by viewModel.stores.collectAsStateWithLifecycle()
     val currentStore by viewModel.currentStore.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                viewModel.addPhoto(it.toString())
+            }
+        }
+    )
     
     var showAddItemSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<ShoppingItem?>(null) }
@@ -44,6 +74,8 @@ fun ListDetailScreen(
     var showStoreDialog by remember { mutableStateOf(false) }
     var showAddStoreDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var viewingPhotoUri by remember { mutableStateOf<String?>(null) }
+    var photoToDelete by remember { mutableStateOf<Photo?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -72,7 +104,11 @@ fun ListDetailScreen(
                             Icon(Icons.Default.SettingsBackupRestore, contentDescription = "Uncomplete Shopping")
                         }
                     }
-                    IconButton(onClick = { /* Photo picker */ }) {
+                    IconButton(onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }) {
                         Icon(Icons.Default.PhotoCamera, contentDescription = "Add Photo")
                     }
                     IconButton(onClick = { showMenu = true }) {
@@ -121,6 +157,46 @@ fun ListDetailScreen(
                 currencySymbol = currencySymbol,
                 isCompleted = shoppingList?.isCompleted ?: false
             )
+
+            if (photos.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(photos, key = { it.id }) { photo ->
+                        Box {
+                            AsyncImage(
+                                model = photo.uri,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { viewingPhotoUri = photo.uri },
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { photoToDelete = photo },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(24.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        RoundedCornerShape(bottomStart = 8.dp)
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Delete Photo",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -368,6 +444,86 @@ fun ListDetailScreen(
                 }
             }
         )
+    }
+
+    photoToDelete?.let { photo ->
+        AlertDialog(
+            onDismissRequest = { photoToDelete = null },
+            title = { Text("Delete Photo?") },
+            text = { Text("Are you sure you want to remove this photo from the list?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deletePhoto(photo)
+                        photoToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { photoToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (viewingPhotoUri != null) {
+        var scale by remember { mutableStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { viewingPhotoUri = null },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(androidx.compose.ui.graphics.Color.Black)
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            if (scale > 1f) {
+                                offset += pan
+                            } else {
+                                offset = Offset.Zero
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = viewingPhotoUri,
+                    contentDescription = "View Photo",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y
+                        ),
+                    contentScale = ContentScale.Fit
+                )
+                IconButton(
+                    onClick = { viewingPhotoUri = null },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .statusBarsPadding()
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = androidx.compose.ui.graphics.Color.White
+                    )
+                }
+            }
+        }
     }
 }
 
