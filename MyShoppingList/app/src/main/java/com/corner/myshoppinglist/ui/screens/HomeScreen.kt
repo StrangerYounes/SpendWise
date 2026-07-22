@@ -231,6 +231,14 @@ fun ShoppingListCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
+                item.storeName?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
                 if (item.shoppingList.isCompleted) {
                     SuggestionChip(
                         onClick = {},

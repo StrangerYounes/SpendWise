@@ -3,12 +3,20 @@ package com.corner.myshoppinglist.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.corner.myshoppinglist.data.local.dao.PurchaseHistoryItem
+import com.corner.myshoppinglist.data.local.dao.StorePriceDetail
 import com.corner.myshoppinglist.data.local.entities.MasterItem
 import com.corner.myshoppinglist.data.repository.SettingsRepository
 import com.corner.myshoppinglist.data.repository.ShoppingRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+data class MasterItemDetail(
+    val item: MasterItem,
+    val storePrices: List<StorePriceDetail>,
+    val purchaseHistory: List<PurchaseHistoryItem>
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MasterItemViewModel(
@@ -18,6 +26,28 @@ class MasterItemViewModel(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _selectedItemId = MutableStateFlow<Long?>(null)
+    
+    val itemDetail: StateFlow<MasterItemDetail?> = _selectedItemId
+        .flatMapLatest { id ->
+            if (id == null) flowOf(null)
+            else {
+                repository.allMasterItems.map { list -> list.find { it.id == id } }
+                    .flatMapLatest { item ->
+                        if (item == null) flowOf(null)
+                        else {
+                            combine(
+                                repository.getStorePricesWithNames(id),
+                                repository.getPurchaseHistory(item.name)
+                            ) { prices, history ->
+                                MasterItemDetail(item, prices, history)
+                            }
+                        }
+                    }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val currencySymbol: StateFlow<String> = settingsRepository.settings
         .map { it?.currencySymbol ?: "$" }
@@ -35,6 +65,10 @@ class MasterItemViewModel(
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
+    }
+
+    fun selectItem(itemId: Long?) {
+        _selectedItemId.value = itemId
     }
 
     fun updateMasterItem(item: MasterItem) {

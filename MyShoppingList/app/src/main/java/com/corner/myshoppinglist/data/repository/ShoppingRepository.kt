@@ -1,10 +1,7 @@
 package com.corner.myshoppinglist.data.repository
 
 import com.corner.myshoppinglist.data.local.dao.*
-import com.corner.myshoppinglist.data.local.entities.MasterItem
-import com.corner.myshoppinglist.data.local.entities.Photo
-import com.corner.myshoppinglist.data.local.entities.ShoppingItem
-import com.corner.myshoppinglist.data.local.entities.ShoppingList
+import com.corner.myshoppinglist.data.local.entities.*
 import kotlinx.coroutines.flow.Flow
 
 class ShoppingRepository(
@@ -12,10 +9,32 @@ class ShoppingRepository(
     private val shoppingItemDao: ShoppingItemDao,
     private val masterItemDao: MasterItemDao,
     private val photoDao: PhotoDao,
-    private val statsDao: StatsDao
+    private val statsDao: StatsDao,
+    private val storeDao: StoreDao
 ) {
     // Shopping Lists
     val allShoppingLists: Flow<List<ShoppingListWithDetails>> = shoppingListDao.getAllShoppingListsWithDetails()
+    
+    // Stores
+    val allStores: Flow<List<Store>> = storeDao.getAllStores()
+
+    suspend fun getStoreById(id: Long): Store? = storeDao.getStoreById(id)
+    suspend fun insertStore(store: Store): Long = storeDao.insertStore(store)
+    suspend fun updateStore(store: Store) = storeDao.updateStore(store)
+    suspend fun deleteStore(store: Store) = storeDao.deleteStore(store)
+
+    // Store Prices
+    fun getPricesForItem(masterItemId: Long): Flow<List<StoreItemPrice>> = 
+        storeDao.getPricesForItem(masterItemId)
+    
+    suspend fun getCheapestPriceForItem(masterItemId: Long): StoreItemPrice? =
+        storeDao.getCheapestPriceForItem(masterItemId)
+
+    fun getStorePricesWithNames(masterItemId: Long): Flow<List<StorePriceDetail>> =
+        storeDao.getStorePricesWithNames(masterItemId)
+
+    suspend fun getPriceForItemAtStore(masterItemId: Long, storeId: Long): StoreItemPrice? =
+        storeDao.getPriceForItemAtStore(masterItemId, storeId)
     
     // Stats
     val itemStats: Flow<List<ItemStat>> = statsDao.getItemStats()
@@ -46,11 +65,10 @@ class ShoppingRepository(
     }
 
     suspend fun updateShoppingItem(item: ShoppingItem) {
-        val oldItem = shoppingItemDao.getItemById(item.id)
         shoppingItemDao.updateItem(item)
 
-        // If actual price was just entered or changed, update MasterItem
-        if (item.actualPrice != null && item.actualPrice != oldItem?.actualPrice) {
+        // If item is purchased and has a price (actual or estimated), update tracking
+        if (item.purchased) {
             updateMasterItem(item)
         }
     }
@@ -60,6 +78,9 @@ class ShoppingRepository(
 
     fun searchItems(query: String): Flow<List<ShoppingItem>> =
         shoppingItemDao.searchItems(query)
+
+    fun getPurchaseHistory(itemName: String): Flow<List<PurchaseHistoryItem>> =
+        shoppingItemDao.getPurchaseHistory(itemName)
 
     // Master Items
     val allMasterItems: Flow<List<MasterItem>> = masterItemDao.getAllMasterItems()
@@ -81,11 +102,14 @@ class ShoppingRepository(
 
     private suspend fun updateMasterItem(shoppingItem: ShoppingItem) {
         val name = shoppingItem.itemName
-        val price = shoppingItem.actualPrice ?: return
+        val price = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice ?: return
         val date = System.currentTimeMillis()
 
+        // Get effective storeId: item-level override OR list-level default
+        val effectiveStoreId = shoppingItem.storeId ?: shoppingListDao.getShoppingListById(shoppingItem.listId)?.storeId
+
         val existingMaster = masterItemDao.getMasterItemByName(name)
-        if (existingMaster == null) {
+        val masterId = if (existingMaster == null) {
             val newMaster = MasterItem(
                 name = name,
                 averagePrice = price,
@@ -108,6 +132,33 @@ class ShoppingRepository(
                 lastPurchaseDate = date
             )
             masterItemDao.updateMasterItem(updatedMaster)
+            existingMaster.id
+        }
+
+        // Update StorePrice if we have a storeId
+        if (effectiveStoreId != null) {
+            val existingStorePrice = storeDao.getPriceForItemAtStore(masterId, effectiveStoreId)
+            if (existingStorePrice == null) {
+                storeDao.insertStorePrice(
+                    StoreItemPrice(
+                        masterItemId = masterId,
+                        storeId = effectiveStoreId,
+                        lastPrice = price,
+                        lowestPrice = price,
+                        highestPrice = price,
+                        lastUpdated = date
+                    )
+                )
+            } else {
+                storeDao.insertStorePrice(
+                    existingStorePrice.copy(
+                        lastPrice = price,
+                        lowestPrice = minOf(existingStorePrice.lowestPrice, price),
+                        highestPrice = maxOf(existingStorePrice.highestPrice, price),
+                        lastUpdated = date
+                    )
+                )
+            }
         }
     }
 

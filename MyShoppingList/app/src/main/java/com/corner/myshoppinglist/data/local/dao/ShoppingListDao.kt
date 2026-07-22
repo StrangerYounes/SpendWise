@@ -8,11 +8,13 @@ import kotlinx.coroutines.flow.Flow
 interface ShoppingListDao {
     @Query("""
         SELECT sl.*, 
+        s.name as storeName,
         COUNT(si.id) as itemCount, 
         SUM(COALESCE(si.estimatedPrice, 0) * si.quantity) as estimatedTotal,
         SUM(CASE WHEN si.purchased THEN COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity ELSE 0 END) as actualTotal
         FROM shopping_lists sl
         LEFT JOIN shopping_items si ON sl.id = si.listId
+        LEFT JOIN stores s ON sl.storeId = s.id
         GROUP BY sl.id
         ORDER BY sl.createdDate DESC
     """)
@@ -32,11 +34,13 @@ interface ShoppingListDao {
 
     @Query("""
         SELECT sl.*, 
+        s.name as storeName,
         COUNT(si.id) as itemCount, 
         SUM(COALESCE(si.estimatedPrice, 0) * si.quantity) as estimatedTotal,
         SUM(CASE WHEN si.purchased THEN COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity ELSE 0 END) as actualTotal
         FROM shopping_lists sl
         LEFT JOIN shopping_items si ON sl.id = si.listId
+        LEFT JOIN stores s ON sl.storeId = s.id
         WHERE sl.name LIKE '%' || :query || '%'
         GROUP BY sl.id
         ORDER BY sl.createdDate DESC
@@ -48,5 +52,6 @@ data class ShoppingListWithDetails(
     @Embedded val shoppingList: ShoppingList,
     val itemCount: Int,
     val estimatedTotal: Double,
-    val actualTotal: Double
+    val actualTotal: Double,
+    val storeName: String?
 )

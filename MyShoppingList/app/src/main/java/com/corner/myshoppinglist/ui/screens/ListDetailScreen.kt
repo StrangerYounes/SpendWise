@@ -34,11 +34,15 @@ fun ListDetailScreen(
     val estimatedTotal by viewModel.estimatedTotal.collectAsStateWithLifecycle()
     val actualTotal by viewModel.actualTotal.collectAsStateWithLifecycle()
     val currencySymbol by viewModel.currencySymbol.collectAsStateWithLifecycle()
+    val stores by viewModel.stores.collectAsStateWithLifecycle()
+    val currentStore by viewModel.currentStore.collectAsStateWithLifecycle()
     
     var showAddItemSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<ShoppingItem?>(null) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showUncompleteDialog by remember { mutableStateOf(false) }
+    var showStoreDialog by remember { mutableStateOf(false) }
+    var showAddStoreDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -106,6 +110,11 @@ fun ListDetailScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
+            StoreSelector(
+                currentStoreName = currentStore?.name,
+                onSelectStore = { showStoreDialog = true }
+            )
+
             TotalCostCard(
                 estimatedTotal = estimatedTotal,
                 actualTotal = actualTotal,
@@ -226,6 +235,7 @@ fun ListDetailScreen(
     editingItem?.let { item ->
         ItemEditorDialog(
             item = item,
+            stores = stores,
             onDismiss = { editingItem = null },
             onSave = { updatedItem ->
                 viewModel.updateItem(updatedItem)
@@ -283,6 +293,110 @@ fun ListDetailScreen(
                 }
             }
         )
+    }
+
+    if (showStoreDialog) {
+        AlertDialog(
+            onDismissRequest = { showStoreDialog = false },
+            title = { Text("Select Store") },
+            text = {
+                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                    item {
+                        ListItem(
+                            headlineContent = { Text("No Store (General)") },
+                            modifier = Modifier.clickable {
+                                viewModel.updateListStore(null)
+                                showStoreDialog = false
+                            }
+                        )
+                    }
+                    items(stores) { store ->
+                        ListItem(
+                            headlineContent = { Text(store.name) },
+                            modifier = Modifier.clickable {
+                                viewModel.updateListStore(store.id)
+                                showStoreDialog = false
+                            }
+                        )
+                    }
+                    item {
+                        TextButton(
+                            onClick = { showAddStoreDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Add New Store")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showStoreDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    if (showAddStoreDialog) {
+        var newStoreName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showAddStoreDialog = false },
+            title = { Text("Add Store") },
+            text = {
+                OutlinedTextField(
+                    value = newStoreName,
+                    onValueChange = { newStoreName = it },
+                    label = { Text("Store Name") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newStoreName.isNotBlank()) {
+                        viewModel.addStore(newStoreName)
+                        showAddStoreDialog = false
+                    }
+                }) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddStoreDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun StoreSelector(
+    currentStoreName: String?,
+    onSelectStore: () -> Unit
+) {
+    Surface(
+        onClick = onSelectStore,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(Icons.Default.Storefront, contentDescription = null)
+            Text(
+                text = currentStoreName ?: "Select Store",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+        }
     }
 }
 
@@ -420,16 +534,29 @@ fun AddItemBottomSheet(
             if (suggestions.isNotEmpty()) {
                 LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                     items(suggestions) { suggestion ->
-                        val priceText = "Last: $currencySymbol${"%.2f".format(Locale.US, suggestion.lastPrice)}"
+                        val master = suggestion.masterItem
+                        val priceToUse = suggestion.listStorePrice ?: suggestion.bestPrice ?: master.lastPrice
+                        
                         ListItem(
-                            headlineContent = { Text(suggestion.name) },
-                            supportingContent = { Text(priceText) },
+                            headlineContent = { Text(master.name) },
+                            supportingContent = {
+                                Column {
+                                    Text("Last: $currencySymbol${"%.2f".format(Locale.US, priceToUse)}")
+                                    if (suggestion.bestPrice != null && suggestion.bestPrice < (suggestion.listStorePrice ?: Double.MAX_VALUE)) {
+                                        Text(
+                                            "Cheaper at ${suggestion.bestStoreName}: $currencySymbol${"%.2f".format(Locale.US, suggestion.bestPrice)}",
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                                 .padding(vertical = 4.dp)
                                 .offset(x = (-8).dp),
                             trailingContent = {
                                 IconButton(onClick = {
-                                    onAddItem(suggestion.name, suggestion.lastPrice, 1.0, null, null)
+                                    onAddItem(master.name, priceToUse, 1.0, null, null)
                                 }) {
                                     Icon(Icons.Default.Check, contentDescription = "Add")
                                 }

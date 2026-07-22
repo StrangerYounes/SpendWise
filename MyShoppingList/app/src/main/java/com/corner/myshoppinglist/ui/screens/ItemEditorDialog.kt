@@ -9,10 +9,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.corner.myshoppinglist.data.local.entities.ShoppingItem
+import com.corner.myshoppinglist.data.local.entities.Store
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemEditorDialog(
     item: ShoppingItem,
+    stores: List<Store>,
     onDismiss: () -> Unit,
     onSave: (ShoppingItem) -> Unit
 ) {
@@ -22,6 +25,9 @@ fun ItemEditorDialog(
     var actPrice by remember { mutableStateOf(item.actualPrice?.toString() ?: "") }
     var quantity by remember { mutableStateOf(item.quantity.toString()) }
     var unit by remember { mutableStateOf(item.unit ?: "") }
+    var storeId by remember { mutableStateOf(item.storeId) }
+    
+    var showStoreDropdown by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -89,6 +95,41 @@ fun ItemEditorDialog(
                     minLines = 2
                 )
 
+                ExposedDropdownMenuBox(
+                    expanded = showStoreDropdown,
+                    onExpandedChange = { showStoreDropdown = it }
+                ) {
+                    OutlinedTextField(
+                        value = stores.find { it.id == storeId }?.name ?: "Default Store",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Item Store Override") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showStoreDropdown) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showStoreDropdown,
+                        onDismissRequest = { showStoreDropdown = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Default (List Store)") },
+                            onClick = {
+                                storeId = null
+                                showStoreDropdown = false
+                            }
+                        )
+                        stores.forEach { store ->
+                            DropdownMenuItem(
+                                text = { Text(store.name) },
+                                onClick = {
+                                    storeId = store.id
+                                    showStoreDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -104,7 +145,8 @@ fun ItemEditorDialog(
                                 estimatedPrice = estPrice.toDoubleOrNull(),
                                 actualPrice = actPrice.toDoubleOrNull(),
                                 quantity = quantity.toDoubleOrNull() ?: 1.0,
-                                unit = unit.ifBlank { null }
+                                unit = unit.ifBlank { null },
+                                storeId = storeId
                             )
                         )
                     }) {

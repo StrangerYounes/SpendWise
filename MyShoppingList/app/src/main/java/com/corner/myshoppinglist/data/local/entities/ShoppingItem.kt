@@ -13,9 +13,18 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["listId"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Store::class,
+            parentColumns = ["id"],
+            childColumns = ["storeId"],
+            onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index(value = ["listId"])]
+    indices = [
+        Index(value = ["listId"]),
+        Index(value = ["storeId"])
+    ]
 )
 data class ShoppingItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -27,5 +36,6 @@ data class ShoppingItem(
     val unit: String? = null,
     val purchased: Boolean = false,
     val orderIndex: Int = 0,
-    val notes: String? = null
+    val notes: String? = null,
+    val storeId: Long? = null
 )
