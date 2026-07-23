@@ -14,6 +14,10 @@
         android:title="@string/archive_challenge"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_unarchive"
+        android:title="@string/unarchive_challenge"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_leave"
         android:title="@string/leave_challenge"
         app:showAsAction="never" />

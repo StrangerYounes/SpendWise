@@ -116,6 +116,18 @@ public class HomeViewModel extends ViewModel {
             public void onSuccess(List<Challenge> result) {
                 loading.setValue(false);
                 challenges.setValue(result);
+                
+                // Auto-archive expired challenges
+                if (!archived) {
+                    com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
+                    for (Challenge c : result) {
+                        if (c.getStatusEnum() == com.corner.takecontrol.data.model.ChallengeStatus.ACTIVE 
+                                && c.getEndDate() != null 
+                                && c.getEndDate().compareTo(now) < 0) {
+                            challengeRepository.archiveChallenge(c.getId(), userId, null);
+                        }
+                    }
+                }
             }
 
             @Override

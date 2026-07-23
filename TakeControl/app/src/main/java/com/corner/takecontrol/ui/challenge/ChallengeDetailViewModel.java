@@ -323,6 +323,15 @@ public class ChallengeDetailViewModel extends ViewModel {
         });
     }
 
+    public void unarchiveChallenge() {
+        if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        challengeRepository.unarchiveChallenge(challengeId, userId, new RepositoryCallback<>() {
+            @Override public void onSuccess(Void result) { challengeDeleted.setValue(true); }
+            @Override public void onError(String message) { error.setValue(message); }
+        });
+    }
+
     public void postToFeed(String content) {
         if (challengeId == null || FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();

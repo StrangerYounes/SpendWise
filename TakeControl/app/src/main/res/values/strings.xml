@@ -118,11 +118,12 @@
     <string name="show_active">Show Active</string>
     <string name="error_generic">Something went wrong</string>
     <string name="archive_challenge">Archive Challenge</string>
+    <string name="unarchive_challenge">Restore Challenge</string>
     <string name="leave_challenge">Leave Challenge</string>
     <string name="delete_challenge">Delete Challenge</string>
     <string name="leave_challenge_message">Are you sure you want to leave this challenge?</string>
     <string name="delete_challenge_message">Are you sure you want to delete this challenge? This will remove it for all members.</string>
-    <string name="archive_challenge_message">This challenge is completed. Archive it to remove it from your main list?</string>
+    <string name="archive_challenge_message">Archive this challenge to remove it from your main list?</string>
     <string name="default_web_client_id">000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com</string>
     <string name="public_challenge">Public Challenge</string>
     <string name="public_challenge_hint">Public challenges can be found by anyone in the Explore screen.</string>

@@ -271,10 +271,59 @@ public class ChallengeRepository {
     }
 
     public void archiveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
-        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
-                .update("archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
-                .addOnSuccessListener(unused -> {
-                    if (callback != null) callback.onSuccess(null);
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId).get()
+                .addOnSuccessListener(snapshot -> {
+                    Challenge challenge = snapshot.toObject(Challenge.class);
+                    if (challenge == null) return;
+
+                    com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+                    com.google.firebase.firestore.DocumentReference ref = firestore.collection(COLLECTION_CHALLENGES).document(challengeId);
+
+                    batch.update(ref, "archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId));
+
+                    // Mark as completed if it's currently active
+                    if (ChallengeStatus.ACTIVE.getValue().equals(challenge.getStatus())) {
+                        batch.update(ref, "status", ChallengeStatus.COMPLETED.getValue());
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> {
+                                if (callback != null) callback.onSuccess(null);
+                            })
+                            .addOnFailureListener(e -> {
+                                if (callback != null) callback.onError(e.getMessage());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    public void unarchiveChallenge(String challengeId, String userId, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId).get()
+                .addOnSuccessListener(snapshot -> {
+                    Challenge challenge = snapshot.toObject(Challenge.class);
+                    if (challenge == null) return;
+
+                    com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+                    com.google.firebase.firestore.DocumentReference ref = firestore.collection(COLLECTION_CHALLENGES).document(challengeId);
+
+                    batch.update(ref, "archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayRemove(userId));
+
+                    // Restore to active if it was completed and hasn't expired yet
+                    if (ChallengeStatus.COMPLETED.getValue().equals(challenge.getStatus())
+                            && challenge.getEndDate() != null
+                            && challenge.getEndDate().compareTo(com.google.firebase.Timestamp.now()) > 0) {
+                        batch.update(ref, "status", ChallengeStatus.ACTIVE.getValue());
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> {
+                                if (callback != null) callback.onSuccess(null);
+                            })
+                            .addOnFailureListener(e -> {
+                                if (callback != null) callback.onError(e.getMessage());
+                            });
                 })
                 .addOnFailureListener(e -> {
                     if (callback != null) callback.onError(e.getMessage());

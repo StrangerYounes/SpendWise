@@ -244,7 +244,8 @@ public class ChallengeDetailFragment extends Fragment {
         toolbar.getMenu().findItem(R.id.action_share).setVisible(status == ChallengeStatus.ACTIVE || status == ChallengeStatus.COMPLETED);
         toolbar.getMenu().findItem(R.id.action_delete).setVisible(isCreator);
         toolbar.getMenu().findItem(R.id.action_leave).setVisible(!isCreator);
-        toolbar.getMenu().findItem(R.id.action_archive).setVisible(status == ChallengeStatus.COMPLETED && !isArchived);
+        toolbar.getMenu().findItem(R.id.action_archive).setVisible(!isArchived);
+        toolbar.getMenu().findItem(R.id.action_unarchive).setVisible(isArchived);
 
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
@@ -279,6 +280,9 @@ public class ChallengeDetailFragment extends Fragment {
                         .setPositiveButton(R.string.archive_challenge, (d, w) -> viewModel.archiveChallenge())
                         .setNegativeButton(R.string.cancel, null)
                         .show();
+                return true;
+            } else if (id == R.id.action_unarchive) {
+                viewModel.unarchiveChallenge();
                 return true;
             }
             return false;
