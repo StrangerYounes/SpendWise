@@ -40,6 +40,12 @@ class ShoppingViewModel(
     val spentPerMonth = repository.spentPerMonth.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
+    val spentByCategory = repository.spentByCategory.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
+    val spentByStore = repository.spentByStore.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
 
     init {
         viewModelScope.launch {

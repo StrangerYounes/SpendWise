@@ -36,6 +36,32 @@ interface StatsDao {
         ORDER BY period DESC
     """)
     fun getSpentPerMonth(): Flow<List<PeriodStat>>
+
+    @Query("""
+        SELECT 
+            c.name as categoryName,
+            c.color as categoryColor,
+            SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
+        FROM shopping_items si
+        JOIN shopping_lists sl ON si.listId = sl.id
+        JOIN categories c ON COALESCE(sl.categoryId, (SELECT id FROM categories WHERE name = 'Groceries' LIMIT 1)) = c.id
+        WHERE si.purchased = 1
+        GROUP BY c.id
+        ORDER BY totalSpent DESC
+    """)
+    fun getSpentByCategory(): Flow<List<CategoryStat>>
+
+    @Query("""
+        SELECT 
+            s.name as storeName,
+            SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
+        FROM shopping_items si
+        JOIN stores s ON si.storeId = s.id
+        WHERE si.purchased = 1
+        GROUP BY s.id
+        ORDER BY totalSpent DESC
+    """)
+    fun getSpentByStore(): Flow<List<StoreStat>>
 }
 
 data class ItemStat(
@@ -51,5 +77,16 @@ data class ExpensiveItem(
 
 data class PeriodStat(
     val period: String,
+    val totalSpent: Double
+)
+
+data class CategoryStat(
+    val categoryName: String,
+    val categoryColor: Int,
+    val totalSpent: Double
+)
+
+data class StoreStat(
+    val storeName: String,
     val totalSpent: Double
 )

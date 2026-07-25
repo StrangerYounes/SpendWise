@@ -49,6 +49,8 @@ class ShoppingRepository(
     val itemStats: Flow<List<ItemStat>> = statsDao.getItemStats()
     val expensiveItems: Flow<List<ExpensiveItem>> = statsDao.getMostExpensiveItems()
     val spentPerMonth: Flow<List<PeriodStat>> = statsDao.getSpentPerMonth()
+    val spentByCategory: Flow<List<CategoryStat>> = statsDao.getSpentByCategory()
+    val spentByStore: Flow<List<StoreStat>> = statsDao.getSpentByStore()
 
     fun searchShoppingLists(query: String): Flow<List<ShoppingListWithDetails>> =
         shoppingListDao.searchShoppingListsWithDetails(query)
