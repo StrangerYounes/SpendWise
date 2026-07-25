@@ -14,7 +14,8 @@ class ShoppingApplication : Application() {
             database.masterItemDao(),
             database.photoDao(),
             database.statsDao(),
-            database.storeDao()
+            database.storeDao(),
+            database.categoryDao()
         )
     }
     val settingsRepository by lazy {

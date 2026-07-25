@@ -18,6 +18,9 @@ class ShoppingViewModel(
     private val _shoppingLists = MutableStateFlow<List<ShoppingListWithDetails>>(emptyList())
     val shoppingLists: StateFlow<List<ShoppingListWithDetails>> = _shoppingLists.asStateFlow()
 
+    val categories: StateFlow<List<com.corner.myshoppinglist.data.local.entities.Category>> = repository.allCategories
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -66,9 +69,9 @@ class ShoppingViewModel(
         _searchQuery.value = query
     }
 
-    fun addShoppingList(name: String) {
+    fun addShoppingList(name: String, categoryId: Long? = null) {
         viewModelScope.launch {
-            repository.insertShoppingList(ShoppingList(name = name))
+            repository.insertShoppingList(ShoppingList(name = name, categoryId = categoryId))
         }
     }
 
@@ -90,10 +93,15 @@ class ShoppingViewModel(
         }
     }
 
-    fun duplicateList(shoppingList: ShoppingList) {
+    fun setListCategory(shoppingList: ShoppingList, categoryId: Long?) {
         viewModelScope.launch {
-            val items = repository.getItemsForList(shoppingList.id).first()
-            repository.duplicateList(shoppingList, items)
+            repository.updateShoppingList(shoppingList.copy(categoryId = categoryId))
+        }
+    }
+
+    fun addCategory(name: String, color: Int) {
+        viewModelScope.launch {
+            repository.insertCategory(com.corner.myshoppinglist.data.local.entities.Category(name = name, color = color))
         }
     }
 }

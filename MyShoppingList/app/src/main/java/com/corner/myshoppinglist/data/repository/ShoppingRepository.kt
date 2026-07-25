@@ -10,10 +10,19 @@ class ShoppingRepository(
     private val masterItemDao: MasterItemDao,
     private val photoDao: PhotoDao,
     private val statsDao: StatsDao,
-    private val storeDao: StoreDao
+    private val storeDao: StoreDao,
+    private val categoryDao: CategoryDao
 ) {
     // Shopping Lists
     val allShoppingLists: Flow<List<ShoppingListWithDetails>> = shoppingListDao.getAllShoppingListsWithDetails()
+    
+    // Categories
+    val allCategories: Flow<List<Category>> = categoryDao.getAllCategories()
+    suspend fun insertCategory(category: Category) = categoryDao.insertCategory(category)
+    suspend fun updateCategory(category: Category) = categoryDao.updateCategory(category)
+    suspend fun deleteCategory(category: Category) = categoryDao.deleteCategory(category)
+    suspend fun getCategoryByName(name: String) = categoryDao.getCategoryByName(name)
+    suspend fun getCategoryById(id: Long) = categoryDao.getCategoryById(id)
     
     // Stores
     val allStores: Flow<List<Store>> = storeDao.getAllStores()
@@ -171,27 +180,4 @@ class ShoppingRepository(
 
     suspend fun deletePhoto(photo: Photo) =
         photoDao.deletePhoto(photo)
-
-    suspend fun duplicateList(list: ShoppingList, items: List<ShoppingItem>): Long {
-        val newListId = shoppingListDao.insertShoppingList(
-            list.copy(
-                id = 0,
-                name = "Copy of ${list.name}",
-                createdDate = System.currentTimeMillis(),
-                completedDate = null,
-                isCompleted = false
-            )
-        )
-        items.forEach { item ->
-            shoppingItemDao.insertItem(
-                item.copy(
-                    id = 0,
-                    listId = newListId,
-                    purchased = false,
-                    actualPrice = null
-                )
-            )
-        }
-        return newListId
-    }
 }

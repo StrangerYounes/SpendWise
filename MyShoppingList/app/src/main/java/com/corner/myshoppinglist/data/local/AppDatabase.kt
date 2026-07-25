@@ -17,9 +17,10 @@ import com.corner.myshoppinglist.data.local.entities.*
         Photo::class, 
         AppSettings::class,
         Store::class,
-        StoreItemPrice::class
+        StoreItemPrice::class,
+        Category::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun settingsDao(): SettingsDao
     abstract fun statsDao(): StatsDao
     abstract fun storeDao(): StoreDao
+    abstract fun categoryDao(): CategoryDao
 
     companion object {
         @Volatile
@@ -58,8 +60,8 @@ abstract class AppDatabase : RoomDatabase() {
                 
                 // 2. Copy data from the old table
                 db.execSQL("""
-                    INSERT INTO `shopping_items_new` (`id`, `listId`, `itemName`, `estimatedPrice`, `actualPrice`, `quantity`, `unit`, `purchased`, `orderIndex`, `notes`)
-                    SELECT `id`, `listId`, `itemName`, `estimatedPrice`, `actualPrice`, CAST(`quantity` AS REAL), `unit`, `purchased`, `orderIndex`, `notes`
+                    INSERT INTO `shopping_items_new` (`id`, `listId`, `itemName`, `estimatedPrice`, `actualPrice`, CAST(`quantity` AS REAL), `unit`, `purchased`, `orderIndex`, `notes`)
+                    SELECT `id`, `listId`, `itemName`, `estimatedPrice`, `actualPrice`, `quantity`, `unit`, `purchased`, `orderIndex`, `notes`
                     FROM `shopping_items`
                 """)
                 
@@ -150,6 +152,45 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Create categories table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `categories` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `color` INTEGER NOT NULL
+                    )
+                """)
+                
+                // 2. Insert default Groceries category (Green: #4CAF50 -> -12537232)
+                db.execSQL("INSERT INTO `categories` (`name`, `color`) VALUES ('Groceries', -12537232)")
+
+                // 3. Update shopping_lists table to add categoryId
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `shopping_lists_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `createdDate` INTEGER NOT NULL, 
+                        `completedDate` INTEGER, 
+                        `isCompleted` INTEGER NOT NULL, 
+                        `storeId` INTEGER, 
+                        `categoryId` INTEGER, 
+                        FOREIGN KEY(`storeId`) REFERENCES `stores`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, 
+                        FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL
+                    )
+                """)
+                db.execSQL("""
+                    INSERT INTO `shopping_lists_new` (`id`, `name`, `createdDate`, `completedDate`, `isCompleted`, `storeId`, `categoryId`)
+                    SELECT `id`, `name`, `createdDate`, `completedDate`, `isCompleted`, `storeId`, NULL FROM `shopping_lists`
+                """)
+                db.execSQL("DROP TABLE `shopping_lists`")
+                db.execSQL("ALTER TABLE `shopping_lists_new` RENAME TO `shopping_lists`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_shopping_lists_storeId` ON `shopping_lists` (`storeId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_shopping_lists_categoryId` ON `shopping_lists` (`categoryId`)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -157,7 +198,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "shopping_list_database"
                 )
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
                 INSTANCE = instance
                 instance

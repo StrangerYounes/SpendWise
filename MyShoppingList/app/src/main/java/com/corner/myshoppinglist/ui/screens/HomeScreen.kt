@@ -1,15 +1,22 @@
 package com.corner.myshoppinglist.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,17 +34,33 @@ fun HomeScreen(
     onNavigateToStats: () -> Unit
 ) {
     val shoppingLists by viewModel.shoppingLists.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     val searchedItems by viewModel.searchedItems.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val currencySymbol by viewModel.currencySymbol.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
-    var listToRename by remember { mutableStateOf<com.corner.myshoppinglist.data.local.entities.ShoppingList?>(null) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
+    var listToEdit by remember { mutableStateOf<com.corner.myshoppinglist.data.local.entities.ShoppingList?>(null) }
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    
+    val activeLists = remember(shoppingLists) { shoppingLists.filter { !it.shoppingList.isCompleted } }
+    val completedLists = remember(shoppingLists) { shoppingLists.filter { it.shoppingList.isCompleted } }
+    
+    val tabs = listOf(
+        "Active (${activeLists.size})",
+        "Completed (${completedLists.size})"
+    )
+
+    val currentDisplayLists = if (selectedTabIndex == 0) activeLists else completedLists
 
     Scaffold(
         topBar = {
             LargeTopAppBar(
                 title = { Text("My Shopping Lists") },
                 actions = {
+                    IconButton(onClick = { showCategoryDialog = true }) {
+                        Icon(Icons.Default.Category, contentDescription = "Categories")
+                    }
                     IconButton(onClick = onNavigateToStats) {
                         Icon(Icons.Default.BarChart, contentDescription = "Statistics")
                     }
@@ -66,6 +89,16 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {}
+
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) }
+                    )
+                }
+            }
 
             LazyColumn(
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp),
@@ -105,7 +138,7 @@ fun HomeScreen(
                     }
                 }
 
-                if (shoppingLists.isNotEmpty()) {
+                if (currentDisplayLists.isNotEmpty()) {
                     if (searchQuery.isNotEmpty()) {
                         item {
                             Text(
@@ -115,20 +148,19 @@ fun HomeScreen(
                             )
                         }
                     }
-                    items(shoppingLists, key = { "list_${it.shoppingList.id}" }) { item ->
+                    items(currentDisplayLists, key = { "list_${it.shoppingList.id}" }) { item ->
                         ShoppingListCard(
                             item = item,
                             currencySymbol = currencySymbol,
                             onClick = { onNavigateToDetail(item.shoppingList.id) },
                             onDelete = { viewModel.deleteShoppingList(item.shoppingList) },
-                            onDuplicate = { viewModel.duplicateList(item.shoppingList) },
-                            onRename = { listToRename = item.shoppingList }
+                            onEdit = { listToEdit = item.shoppingList }
                         )
                     }
                 } else if (searchQuery.isEmpty()) {
                     item {
                         Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No shopping lists yet. Tap + to create one.")
+                            Text(if (selectedTabIndex == 0) "No active shopping lists." else "No completed lists yet.")
                         }
                     }
                 }
@@ -138,22 +170,68 @@ fun HomeScreen(
 
     if (showAddDialog) {
         var listName by remember { mutableStateOf("") }
+        var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
+        var expanded by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
             title = { Text("New Shopping List") },
             text = {
-                TextField(
-                    value = listName,
-                    onValueChange = { listName = it },
-                    placeholder = { Text("Enter list name") },
-                    singleLine = true
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    TextField(
+                        value = listName,
+                        onValueChange = { listName = it },
+                        placeholder = { Text("Enter list name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Box {
+                        OutlinedCard(
+                            onClick = { expanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val selectedCategory = categories.find { it.id == selectedCategoryId }
+                                Text(selectedCategory?.name ?: "Groceries (Default)")
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Groceries (Default)") },
+                                onClick = {
+                                    selectedCategoryId = null
+                                    expanded = false
+                                }
+                            )
+                            categories.filter { it.name != "Groceries" }.forEach { category ->
+                                DropdownMenuItem(
+                                    text = { Text(category.name) },
+                                    onClick = {
+                                        selectedCategoryId = category.id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         if (listName.isNotBlank()) {
-                            viewModel.addShoppingList(listName)
+                            viewModel.addShoppingList(listName, selectedCategoryId)
                             showAddDialog = false
                         }
                     }
@@ -169,34 +247,174 @@ fun HomeScreen(
         )
     }
 
-    listToRename?.let { list ->
+    listToEdit?.let { list ->
         var newName by remember { mutableStateOf(list.name) }
+        var selectedCategoryId by remember { mutableStateOf(list.categoryId) }
+        var expanded by remember { mutableStateOf(false) }
+
         AlertDialog(
-            onDismissRequest = { listToRename = null },
-            title = { Text("Rename Shopping List") },
+            onDismissRequest = { listToEdit = null },
+            title = { Text("Edit Shopping List") },
             text = {
-                TextField(
-                    value = newName,
-                    onValueChange = { newName = it },
-                    placeholder = { Text("Enter new name") },
-                    singleLine = true
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    TextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        placeholder = { Text("Enter list name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Box {
+                        OutlinedCard(
+                            onClick = { expanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val selectedCategory = categories.find { it.id == selectedCategoryId }
+                                Text(selectedCategory?.name ?: "Groceries (Default)")
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Groceries (Default)") },
+                                onClick = {
+                                    selectedCategoryId = null
+                                    expanded = false
+                                }
+                            )
+                            categories.filter { it.name != "Groceries" }.forEach { category ->
+                                DropdownMenuItem(
+                                    text = { Text(category.name) },
+                                    onClick = {
+                                        selectedCategoryId = category.id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         if (newName.isNotBlank()) {
-                            viewModel.renameShoppingList(list, newName)
-                            listToRename = null
+                            viewModel.updateShoppingList(list.copy(name = newName, categoryId = selectedCategoryId))
+                            listToEdit = null
                         }
                     }
                 ) {
-                    Text("Rename")
+                    Text("Save")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { listToRename = null }) {
+                TextButton(onClick = { listToEdit = null }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showCategoryDialog) {
+        var newCategoryName by remember { mutableStateOf("") }
+        val predefinedColors = listOf(
+            0xFFF44336, 0xFFE91E63, 0xFF9C27B0, 0xFF673AB7,
+            0xFF3F51B5, 0xFF2196F3, 0xFF03A9F4, 0xFF00BCD4,
+            0xFF009688, 0xFF4CAF50, 0xFF8BC34A, 0xFFCDDC39,
+            0xFFFFEB3B, 0xFFFFC107, 0xFFFF9800, 0xFFFF5722
+        )
+        var selectedColor by remember { mutableStateOf(predefinedColors[9]) } // Default green
+
+        AlertDialog(
+            onDismissRequest = { showCategoryDialog = false },
+            title = { Text("Manage Categories") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Existing Categories", style = MaterialTheme.typography.titleSmall)
+                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                        items(categories) { category ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier.size(16.dp)
+                                            .background(Color(category.color), MaterialTheme.shapes.extraSmall)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(category.name)
+                                }
+                                if (category.name != "Groceries") {
+                                    IconButton(onClick = { /* Could add delete functionality */ }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    Text("Add New Category", style = MaterialTheme.typography.titleSmall)
+                    TextField(
+                        value = newCategoryName,
+                        onValueChange = { newCategoryName = it },
+                        placeholder = { Text("Category name") },
+                        singleLine = true
+                    )
+                    
+                    Text("Select Color", style = MaterialTheme.typography.labelSmall)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(4),
+                        modifier = Modifier.height(120.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(predefinedColors.size) { index ->
+                            val colorInt = predefinedColors[index]
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(Color(colorInt), CircleShape)
+                                    .clickable { selectedColor = colorInt }
+                                    .border(
+                                        width = if (selectedColor == colorInt) 2.dp else 0.dp,
+                                        color = if (selectedColor == colorInt) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newCategoryName.isNotBlank()) {
+                            viewModel.addCategory(newCategoryName, selectedColor.toInt())
+                            newCategoryName = ""
+                        }
+                    }
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCategoryDialog = false }) {
+                    Text("Close")
                 }
             }
         )
@@ -210,8 +428,7 @@ fun ShoppingListCard(
     currencySymbol: String,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    onDuplicate: () -> Unit,
-    onRename: () -> Unit
+    onEdit: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -227,12 +444,32 @@ fun ShoppingListCard(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.shoppingList.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = item.shoppingList.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val categoryName = item.category?.name ?: "Groceries"
+                        val categoryColor = item.category?.color?.let { Color(it) } 
+                            ?: Color(0xFF4CAF50)
+                        
+                        Surface(
+                            color = categoryColor.copy(alpha = 0.2f),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            border = BorderStroke(1.dp, categoryColor.copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                text = categoryName,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                color = categoryColor
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -259,16 +496,9 @@ fun ShoppingListCard(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Rename") },
+                            text = { Text("Edit") },
                             onClick = {
-                                onRename()
-                                showMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Duplicate") },
-                            onClick = {
-                                onDuplicate()
+                                onEdit()
                                 showMenu = false
                             }
                         )

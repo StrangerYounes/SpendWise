@@ -2,6 +2,7 @@ package com.corner.myshoppinglist.data.local.dao
 
 import androidx.room.*
 import com.corner.myshoppinglist.data.local.entities.ShoppingList
+import com.corner.myshoppinglist.data.local.entities.Category
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -53,5 +54,10 @@ data class ShoppingListWithDetails(
     val itemCount: Int,
     val estimatedTotal: Double,
     val actualTotal: Double,
-    val storeName: String?
+    val storeName: String?,
+    @Relation(
+        parentColumn = "categoryId",
+        entityColumn = "id"
+    )
+    val category: Category?
 )
