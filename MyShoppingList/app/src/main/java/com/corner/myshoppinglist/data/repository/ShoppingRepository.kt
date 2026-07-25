@@ -112,12 +112,20 @@ class ShoppingRepository(
     }
 
     private suspend fun updateMasterItem(shoppingItem: ShoppingItem) {
+        val shoppingList = shoppingListDao.getShoppingListById(shoppingItem.listId) ?: return
+        
+        // Only track items from the "Groceries" category in the smart database
+        val category = shoppingList.categoryId?.let { categoryDao.getCategoryById(it) }
+        val categoryName = category?.name ?: "Groceries" // Default is Groceries
+        
+        if (categoryName != "Groceries") return
+
         val name = shoppingItem.itemName
         val price = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice ?: return
         val date = System.currentTimeMillis()
 
         // Get effective storeId: item-level override OR list-level default
-        val effectiveStoreId = shoppingItem.storeId ?: shoppingListDao.getShoppingListById(shoppingItem.listId)?.storeId
+        val effectiveStoreId = shoppingItem.storeId ?: shoppingList.storeId
 
         val existingMaster = masterItemDao.getMasterItemByName(name)
         val masterId = if (existingMaster == null) {

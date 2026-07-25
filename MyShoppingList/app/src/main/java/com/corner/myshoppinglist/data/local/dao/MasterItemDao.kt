@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MasterItemDao {
-    @Query("SELECT * FROM master_items ORDER BY name ASC")
+    @Query("SELECT * FROM master_items ORDER BY name COLLATE NOCASE ASC")
     fun getAllMasterItems(): Flow<List<MasterItem>>
 
     @Query("SELECT * FROM master_items WHERE name = :name")
@@ -21,6 +21,6 @@ interface MasterItemDao {
     @Delete
     suspend fun deleteMasterItem(item: MasterItem)
 
-    @Query("SELECT * FROM master_items WHERE name LIKE :query || '%' ORDER BY purchaseCount DESC")
+    @Query("SELECT * FROM master_items WHERE name LIKE :query || '%' ORDER BY name COLLATE NOCASE ASC")
     fun searchMasterItems(query: String): Flow<List<MasterItem>>
 }

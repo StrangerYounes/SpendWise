@@ -58,7 +58,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text("My Shopping Lists") },
+                title = { Text("SpendWise") },
                 actions = {
                     IconButton(onClick = { showCategoryDialog = true }) {
                         Icon(Icons.Default.Category, contentDescription = "Categories")
