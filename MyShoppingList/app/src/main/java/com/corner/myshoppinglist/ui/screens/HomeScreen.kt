@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.corner.myshoppinglist.data.local.dao.ShoppingListWithDetails
@@ -183,7 +185,8 @@ fun HomeScreen(
                         onValueChange = { listName = it },
                         placeholder = { Text("Enter list name") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
 
                     Box {
@@ -262,7 +265,8 @@ fun HomeScreen(
                         onValueChange = { newName = it },
                         placeholder = { Text("Enter list name") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
 
                     Box {
@@ -373,7 +377,8 @@ fun HomeScreen(
                         value = newCategoryName,
                         onValueChange = { newCategoryName = it },
                         placeholder = { Text("Category name") },
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
                     
                     Text("Select Color", style = MaterialTheme.typography.labelSmall)

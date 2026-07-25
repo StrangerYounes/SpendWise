@@ -27,6 +27,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -329,7 +330,8 @@ fun ListDetailScreen(
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
             },
             confirmButton = {
@@ -425,7 +427,8 @@ fun ListDetailScreen(
                     value = newStoreName,
                     onValueChange = { newStoreName = it },
                     label = { Text("Store Name") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
             },
             confirmButton = {
@@ -684,7 +687,8 @@ fun AddItemBottomSheet(
                     viewModel.searchSuggestions(it)
                 },
                 label = { Text("Item Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
             
             if (suggestions.isNotEmpty()) {
@@ -736,7 +740,8 @@ fun AddItemBottomSheet(
                     onValueChange = { unit = it },
                     label = { Text("Unit") },
                     modifier = Modifier.weight(2f),
-                    placeholder = { Text("kg, pack, etc") }
+                    placeholder = { Text("kg, pack, etc") },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -753,7 +758,8 @@ fun AddItemBottomSheet(
                 onValueChange = { notes = it },
                 label = { Text("Notes (Optional)") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2
+                minLines = 2,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
             
             Spacer(modifier = Modifier.height(16.dp))

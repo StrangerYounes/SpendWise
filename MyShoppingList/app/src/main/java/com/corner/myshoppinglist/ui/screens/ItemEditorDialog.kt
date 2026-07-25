@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -51,7 +52,8 @@ fun ItemEditorDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Item Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -66,7 +68,8 @@ fun ItemEditorDialog(
                         value = unit,
                         onValueChange = { unit = it },
                         label = { Text("Unit (e.g. kg)") },
-                        modifier = Modifier.weight(2f)
+                        modifier = Modifier.weight(2f),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
                 }
 
@@ -92,7 +95,8 @@ fun ItemEditorDialog(
                     onValueChange = { notes = it },
                     label = { Text("Notes") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
 
                 ExposedDropdownMenuBox(

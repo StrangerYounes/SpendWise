@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -13,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -255,12 +258,14 @@ fun MasterItemAddDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Item Name") }
+                    label = { Text("Item Name") },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
                 OutlinedTextField(
                     value = price,
                     onValueChange = { price = it },
-                    label = { Text("Price ($currencySymbol)") }
+                    label = { Text("Price ($currencySymbol)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
         },
@@ -299,12 +304,14 @@ fun MasterItemEditDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Item Name") }
+                    label = { Text("Item Name") },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
                 OutlinedTextField(
                     value = lastPrice,
                     onValueChange = { lastPrice = it },
-                    label = { Text("Last Price ($currencySymbol)") }
+                    label = { Text("Last Price ($currencySymbol)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
         },
