@@ -47,7 +47,7 @@ class ListDetailViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val estimatedTotal: StateFlow<Double> = _items.map { items ->
-        items.sumOf { (it.estimatedPrice ?: 0.0) * it.quantity }
+        items.sumOf { (it.actualPrice ?: it.estimatedPrice ?: 0.0) * it.quantity }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val actualTotal: StateFlow<Double> = _items.map { items ->
@@ -193,6 +193,22 @@ class ListDetailViewModel(
     fun addStore(name: String) {
         viewModelScope.launch {
             repository.insertStore(Store(name = name))
+        }
+    }
+
+    fun moveItem(fromIndex: Int, toIndex: Int) {
+        val list = _items.value.toMutableList()
+        if (fromIndex !in list.indices || toIndex !in list.indices) return
+        
+        val item = list.removeAt(fromIndex)
+        list.add(toIndex, item)
+        
+        viewModelScope.launch {
+            list.forEachIndexed { index, shoppingItem ->
+                if (shoppingItem.orderIndex != index) {
+                    repository.updateShoppingItem(shoppingItem.copy(orderIndex = index))
+                }
+            }
         }
     }
 }

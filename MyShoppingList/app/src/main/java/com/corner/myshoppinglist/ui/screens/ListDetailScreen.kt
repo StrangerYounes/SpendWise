@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -204,7 +205,7 @@ fun ListDetailScreen(
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(items, key = { it.id }) { item ->
+                itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = {
                             if (it == SwipeToDismissBoxValue.EndToStart) {
@@ -288,7 +289,13 @@ fun ListDetailScreen(
                                             )
                                         }
                                     }
-                                }
+                                },
+                                onMoveUp = if (index > 0 && items[index - 1].purchased == item.purchased) {
+                                    { viewModel.moveItem(index, index - 1) }
+                                } else null,
+                                onMoveDown = if (index < items.size - 1 && items[index + 1].purchased == item.purchased) {
+                                    { viewModel.moveItem(index, index + 1) }
+                                } else null
                             )
                         }
                     }
@@ -595,7 +602,9 @@ fun ShoppingItemRow(
     currencySymbol: String,
     onCheckedChange: (Boolean) -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -603,6 +612,23 @@ fun ShoppingItemRow(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (onMoveUp != null || onMoveDown != null) {
+            Column(modifier = Modifier.width(32.dp)) {
+                if (onMoveUp != null) {
+                    IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.ArrowDropUp, contentDescription = "Move Up")
+                    }
+                }
+                if (onMoveDown != null) {
+                    IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Move Down")
+                    }
+                }
+            }
+        } else {
+            Spacer(modifier = Modifier.width(32.dp))
+        }
+
         Checkbox(
             checked = item.purchased,
             onCheckedChange = onCheckedChange

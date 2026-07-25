@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ShoppingItemDao {
-    @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY orderIndex ASC")
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY purchased ASC, orderIndex ASC")
     fun getItemsForList(listId: Long): Flow<List<ShoppingItem>>
 
     @Query("SELECT * FROM shopping_items WHERE id = :id")
