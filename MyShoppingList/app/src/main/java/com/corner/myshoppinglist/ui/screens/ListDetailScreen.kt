@@ -738,14 +738,10 @@ fun AddItemBottomSheet(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .offset(x = (-8).dp),
+                                .clickable { onAddItem(master.name, priceToUse, 1.0, null, null) }
+                                .padding(vertical = 4.dp),
                             trailingContent = {
-                                IconButton(onClick = {
-                                    onAddItem(master.name, priceToUse, 1.0, null, null)
-                                }) {
-                                    Icon(Icons.Default.Check, contentDescription = "Add")
-                                }
+                                Icon(Icons.Default.Check, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
                             }
                         )
                     }
