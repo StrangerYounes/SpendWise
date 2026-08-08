@@ -283,7 +283,8 @@ public class ChallengeDetailViewModel extends ViewModel {
         skipsMap.put(userId, skipsUsed + 1);
         current.setMemberSkips(skipsMap);
 
-        challengeRepository.updateChallenge(challengeId, current, new RepositoryCallback<>() {
+        // Use targeted update to avoid permission issues for non-creators
+        challengeRepository.updateMemberSkips(challengeId, userId, skipsUsed + 1, new RepositoryCallback<>() {
             @Override public void onSuccess(Void result) { actionComplete.setValue(true); }
             @Override public void onError(String message) { error.setValue(message); }
         });
