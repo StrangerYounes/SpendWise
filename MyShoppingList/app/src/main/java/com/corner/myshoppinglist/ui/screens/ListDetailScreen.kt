@@ -320,6 +320,7 @@ fun ListDetailScreen(
         ItemEditorDialog(
             item = item,
             stores = stores,
+            viewModel = viewModel,
             onDismiss = { editingItem = null },
             onSave = { updatedItem ->
                 viewModel.updateItem(updatedItem)
@@ -338,6 +339,13 @@ fun ListDetailScreen(
                     value = newName,
                     onValueChange = { newName = it },
                     singleLine = true,
+                    trailingIcon = {
+                        if (newName.isNotEmpty()) {
+                            IconButton(onClick = { newName = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
             },
@@ -714,6 +722,16 @@ fun AddItemBottomSheet(
                 },
                 label = { Text("Item Name") },
                 modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    if (itemName.isNotEmpty()) {
+                        IconButton(onClick = { 
+                            itemName = ""
+                            viewModel.searchSuggestions("")
+                        }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                        }
+                    }
+                },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
             

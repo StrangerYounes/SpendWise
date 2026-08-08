@@ -34,6 +34,9 @@ interface StoreDao {
     @Query("SELECT * FROM store_item_prices WHERE masterItemId = :masterItemId")
     fun getPricesForItem(masterItemId: Long): Flow<List<StoreItemPrice>>
 
+    @Query("SELECT * FROM store_item_prices WHERE masterItemId = :masterItemId")
+    suspend fun getPricesForItemDirect(masterItemId: Long): List<StoreItemPrice>
+
     @Query("SELECT * FROM store_item_prices WHERE masterItemId = :masterItemId AND storeId = :storeId")
     suspend fun getPriceForItemAtStore(masterItemId: Long, storeId: Long): StoreItemPrice?
     

@@ -24,6 +24,6 @@ interface MasterItemDao {
     @Delete
     suspend fun deleteMasterItem(item: MasterItem)
 
-    @Query("SELECT * FROM master_items WHERE name LIKE :query || '%' ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT * FROM master_items WHERE name LIKE '%' || :query || '%' ORDER BY name COLLATE NOCASE ASC")
     fun searchMasterItems(query: String): Flow<List<MasterItem>>
 }

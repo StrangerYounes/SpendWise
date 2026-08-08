@@ -63,6 +63,9 @@ class MasterItemViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val allMasterItems: StateFlow<List<MasterItem>> = repository.allMasterItems
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }
@@ -86,6 +89,13 @@ class MasterItemViewModel(
     fun deleteMasterItem(item: MasterItem) {
         viewModelScope.launch {
             repository.deleteMasterItem(item)
+        }
+    }
+
+    fun mergeItems(sourceItem: MasterItem, targetItem: MasterItem) {
+        viewModelScope.launch {
+            repository.mergeMasterItems(sourceItem, targetItem)
+            _selectedItemId.value = targetItem.id
         }
     }
 }

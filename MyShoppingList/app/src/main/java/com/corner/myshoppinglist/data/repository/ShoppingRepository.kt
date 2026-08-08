@@ -111,6 +111,49 @@ class ShoppingRepository(
         masterItemDao.deleteMasterItem(item)
     }
 
+    suspend fun mergeMasterItems(sourceItem: MasterItem, targetItem: MasterItem) {
+        // 1. Update all shopping items that used the source name
+        shoppingItemDao.updateItemNames(sourceItem.name, targetItem.name)
+
+        // 2. Update/Merge store prices
+        val sourcePrices = storeDao.getPricesForItemDirect(sourceItem.id)
+        for (sourcePrice in sourcePrices) {
+            val existingTargetPrice = storeDao.getPriceForItemAtStore(targetItem.id, sourcePrice.storeId)
+            if (existingTargetPrice == null) {
+                // Just move it
+                storeDao.insertStorePrice(sourcePrice.copy(masterItemId = targetItem.id))
+            } else {
+                // Merge: keep best/latest info
+                val mergedPrice = existingTargetPrice.copy(
+                    lastPrice = if (sourcePrice.lastUpdated > existingTargetPrice.lastUpdated) sourcePrice.lastPrice else existingTargetPrice.lastPrice,
+                    lowestPrice = minOf(sourcePrice.lowestPrice, existingTargetPrice.lowestPrice),
+                    highestPrice = maxOf(sourcePrice.highestPrice, existingTargetPrice.highestPrice),
+                    lastUpdated = maxOf(sourcePrice.lastUpdated, existingTargetPrice.lastUpdated)
+                )
+                storeDao.insertStorePrice(mergedPrice)
+            }
+        }
+
+        // 3. Recalculate target item stats
+        val totalCount = targetItem.purchaseCount + sourceItem.purchaseCount
+        val newAverage = if (totalCount > 0) {
+            (targetItem.averagePrice * targetItem.purchaseCount + sourceItem.averagePrice * sourceItem.purchaseCount) / totalCount
+        } else targetItem.averagePrice
+
+        val updatedTarget = targetItem.copy(
+            averagePrice = newAverage,
+            lastPrice = if (sourceItem.lastPurchaseDate > targetItem.lastPurchaseDate) sourceItem.lastPrice else targetItem.lastPrice,
+            lowestPrice = minOf(targetItem.lowestPrice, sourceItem.lowestPrice),
+            highestPrice = maxOf(targetItem.highestPrice, sourceItem.highestPrice),
+            purchaseCount = totalCount,
+            lastPurchaseDate = maxOf(targetItem.lastPurchaseDate, sourceItem.lastPurchaseDate)
+        )
+        masterItemDao.updateMasterItem(updatedTarget)
+
+        // 4. Delete source item
+        masterItemDao.deleteMasterItem(sourceItem)
+    }
+
     private suspend fun updateMasterItem(shoppingItem: ShoppingItem) {
         val shoppingList = shoppingListDao.getShoppingListById(shoppingItem.listId) ?: return
         
@@ -121,7 +164,7 @@ class ShoppingRepository(
         if (categoryName != "Groceries") return
 
         val name = shoppingItem.itemName
-        val price = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice ?: return
+        val price = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice ?: 0.0
         val date = System.currentTimeMillis()
 
         // Get effective storeId: item-level override OR list-level default

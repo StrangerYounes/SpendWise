@@ -39,6 +39,9 @@ interface ShoppingItemDao {
         ORDER BY sl.createdDate DESC
     """)
     fun getPurchaseHistory(itemName: String): Flow<List<PurchaseHistoryItem>>
+
+    @Query("UPDATE shopping_items SET itemName = :newName WHERE itemName = :oldName")
+    suspend fun updateItemNames(oldName: String, newName: String)
 }
 
 data class PurchaseHistoryItem(

@@ -95,6 +95,13 @@ fun HomeScreen(
                 onActiveChange = {},
                 placeholder = { Text("Search lists or items...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear Search")
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -194,6 +201,13 @@ fun HomeScreen(
                         placeholder = { Text("Enter list name") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                            if (listName.isNotEmpty()) {
+                                IconButton(onClick = { listName = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
 
@@ -274,6 +288,13 @@ fun HomeScreen(
                         placeholder = { Text("Enter list name") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                            if (newName.isNotEmpty()) {
+                                IconButton(onClick = { newName = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
 
@@ -386,6 +407,13 @@ fun HomeScreen(
                         onValueChange = { newCategoryName = it },
                         placeholder = { Text("Category name") },
                         singleLine = true,
+                        trailingIcon = {
+                            if (newCategoryName.isNotEmpty()) {
+                                IconButton(onClick = { newCategoryName = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
                     

@@ -65,6 +65,13 @@ fun MasterLibraryScreen(
                 onActiveChange = {},
                 placeholder = { Text("Search items...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -102,7 +109,11 @@ fun MasterLibraryScreen(
         ItemDetailDialog(
             detail = detail,
             currencySymbol = currencySymbol,
-            onDismiss = { viewModel.selectItem(null) }
+            viewModel = viewModel,
+            onDismiss = { viewModel.selectItem(null) },
+            onMerge = { targetItem ->
+                viewModel.mergeItems(detail.item, targetItem)
+            }
         )
     }
 
@@ -134,10 +145,14 @@ fun MasterLibraryScreen(
 fun ItemDetailDialog(
     detail: MasterItemDetail,
     currencySymbol: String,
-    onDismiss: () -> Unit
+    viewModel: MasterItemViewModel,
+    onDismiss: () -> Unit,
+    onMerge: (MasterItem) -> Unit
 ) {
+    val masterItems by viewModel.allMasterItems.collectAsStateWithLifecycle(initialValue = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     var showMoreHistory by remember { mutableStateOf(false) }
+    var showMergeDialog by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -152,11 +167,21 @@ fun ItemDetailDialog(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = detail.item.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = detail.item.name,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { showMergeDialog = true }) {
+                        Icon(Icons.Default.CallMerge, contentDescription = "Merge into another item")
+                    }
+                }
 
                 Text("Price by Store", style = MaterialTheme.typography.titleMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -207,7 +232,7 @@ fun ItemDetailDialog(
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                     Text(
-                                        "$currencySymbol${"%.2f".format(Locale.US, history.shoppingItem.actualPrice ?: 0.0)}",
+                                        "$currencySymbol${"%.2f".format(Locale.US, history.shoppingItem.actualPrice ?: history.shoppingItem.estimatedPrice ?: 0.0)}",
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
@@ -239,6 +264,75 @@ fun ItemDetailDialog(
             }
         }
     }
+
+    if (showMergeDialog) {
+        MergeSelectionDialog(
+            currentItem = detail.item,
+            allMasterItems = masterItems,
+            onDismiss = { showMergeDialog = false },
+            onMerge = { target ->
+                onMerge(target)
+                showMergeDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun MergeSelectionDialog(
+    currentItem: MasterItem,
+    allMasterItems: List<MasterItem>,
+    onDismiss: () -> Unit,
+    onMerge: (MasterItem) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredItems = remember(searchQuery, allMasterItems) {
+        allMasterItems.filter { 
+            it.id != currentItem.id && it.name.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Merge '${currentItem.name}' into...") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Select the item that will remain. All history and prices from '${currentItem.name}' will be moved to it.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search target item...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    }
+                )
+                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                    items(filteredItems) { item ->
+                        ListItem(
+                            headlineContent = { Text(item.name) },
+                            modifier = Modifier.clickable { onMerge(item) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -259,6 +353,13 @@ fun MasterItemAddDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Item Name") },
+                    trailingIcon = {
+                        if (name.isNotEmpty()) {
+                            IconButton(onClick = { name = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
                 OutlinedTextField(
@@ -305,6 +406,13 @@ fun MasterItemEditDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Item Name") },
+                    trailingIcon = {
+                        if (name.isNotEmpty()) {
+                            IconButton(onClick = { name = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
                 OutlinedTextField(
