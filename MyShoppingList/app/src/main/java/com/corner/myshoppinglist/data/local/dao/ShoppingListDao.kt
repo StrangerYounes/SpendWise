@@ -21,6 +21,9 @@ interface ShoppingListDao {
     """)
     fun getAllShoppingListsWithDetails(): Flow<List<ShoppingListWithDetails>>
 
+    @Query("SELECT * FROM shopping_lists ORDER BY createdDate DESC")
+    fun getAllShoppingLists(): Flow<List<ShoppingList>>
+
     @Query("SELECT * FROM shopping_lists WHERE id = :id")
     suspend fun getShoppingListById(id: Long): ShoppingList?
 

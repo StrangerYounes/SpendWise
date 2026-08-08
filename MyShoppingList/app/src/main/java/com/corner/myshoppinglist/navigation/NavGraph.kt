@@ -55,7 +55,7 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(Screen.Settings.route) {
             val viewModel: SettingsViewModel = viewModel(
-                factory = SettingsViewModelFactory(settingsRepository)
+                factory = SettingsViewModelFactory(settingsRepository, app.backupRepository)
             )
             SettingsScreen(
                 viewModel = viewModel,

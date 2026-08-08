@@ -24,6 +24,9 @@ interface ShoppingItemDao {
     @Query("DELETE FROM shopping_items WHERE listId = :listId")
     suspend fun deleteItemsByListId(listId: Long)
 
+    @Query("SELECT * FROM shopping_items")
+    fun getAllItems(): Flow<List<ShoppingItem>>
+
     @Query("SELECT * FROM shopping_items WHERE itemName LIKE '%' || :query || '%'")
     fun searchItems(query: String): Flow<List<ShoppingItem>>
 

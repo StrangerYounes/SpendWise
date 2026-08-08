@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val app = application as ShoppingApplication
             val settingsViewModel: SettingsViewModel = viewModel(
-                factory = SettingsViewModelFactory(app.settingsRepository)
+                factory = SettingsViewModelFactory(app.settingsRepository, app.backupRepository)
             )
             val settings by settingsViewModel.settings.collectAsState()
             

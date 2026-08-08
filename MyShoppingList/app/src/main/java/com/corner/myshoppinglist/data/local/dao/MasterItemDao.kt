@@ -9,6 +9,9 @@ interface MasterItemDao {
     @Query("SELECT * FROM master_items ORDER BY name COLLATE NOCASE ASC")
     fun getAllMasterItems(): Flow<List<MasterItem>>
 
+    @Query("SELECT * FROM master_items WHERE id = :id")
+    suspend fun getMasterItemById(id: Long): MasterItem?
+
     @Query("SELECT * FROM master_items WHERE name = :name")
     suspend fun getMasterItemByName(name: String): MasterItem?
 

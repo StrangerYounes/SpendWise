@@ -30,23 +30,27 @@ class BackupRepository(private val database: AppDatabase) {
             val storePrices = database.storeDao().getAllStorePrices().firstOrNull() ?: emptyList()
             val settings = database.settingsDao().getSettings().firstOrNull()
 
+            val storeMap = stores.associateBy { it.id }
+            val categoryMap = categories.associateBy { it.id }
+            val masterItemMap = masterItems.associateBy { it.id }
+
             BackupData(
                 masterItems = masterItems.map { it.toBackup() },
                 shoppingLists = shoppingLists.map { list ->
-                    val store = list.storeId?.let { database.storeDao().getStoreById(it) }
-                    val category = list.categoryId?.let { database.categoryDao().getCategoryById(it) }
-                    list.toBackup(store?.name, category?.name)
+                    val storeName = list.storeId?.let { storeMap[it] }?.name
+                    val categoryName = list.categoryId?.let { categoryMap[it] }?.name
+                    list.toBackup(storeName, categoryName)
                 },
                 shoppingItems = shoppingItems.map { item ->
-                    val store = item.storeId?.let { database.storeDao().getStoreById(it) }
-                    item.toBackup(store?.name)
+                    val storeName = item.storeId?.let { storeMap[it] }?.name
+                    item.toBackup(storeName)
                 },
                 categories = categories.map { it.toBackup() },
                 stores = stores.map { it.toBackup() },
                 storeItemPrices = storePrices.map { price ->
-                    val item = database.masterItemDao().getMasterItemById(price.masterItemId)
-                    val store = database.storeDao().getStoreById(price.storeId)
-                    price.toBackup(item?.name ?: "Unknown", store?.name ?: "Unknown")
+                    val itemName = masterItemMap[price.masterItemId]?.name
+                    val storeName = storeMap[price.storeId]?.name
+                    price.toBackup(itemName ?: "Unknown", storeName ?: "Unknown")
                 },
                 settings = settings?.toBackup()
             )

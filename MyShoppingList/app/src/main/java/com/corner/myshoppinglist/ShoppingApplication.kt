@@ -2,6 +2,7 @@ package com.corner.myshoppinglist
 
 import android.app.Application
 import com.corner.myshoppinglist.data.local.AppDatabase
+import com.corner.myshoppinglist.data.repository.BackupRepository
 import com.corner.myshoppinglist.data.repository.SettingsRepository
 import com.corner.myshoppinglist.data.repository.ShoppingRepository
 
@@ -20,5 +21,8 @@ class ShoppingApplication : Application() {
     }
     val settingsRepository by lazy {
         SettingsRepository(database.settingsDao())
+    }
+    val backupRepository by lazy {
+        BackupRepository(database)
     }
 }

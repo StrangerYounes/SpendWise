@@ -13,6 +13,12 @@ interface StoreDao {
     @Query("SELECT * FROM stores WHERE id = :id")
     suspend fun getStoreById(id: Long): Store?
 
+    @Query("SELECT * FROM stores WHERE name = :name LIMIT 1")
+    suspend fun getStoreByName(name: String): Store?
+
+    @Query("SELECT * FROM store_item_prices")
+    fun getAllStorePrices(): Flow<List<StoreItemPrice>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStore(store: Store): Long
 

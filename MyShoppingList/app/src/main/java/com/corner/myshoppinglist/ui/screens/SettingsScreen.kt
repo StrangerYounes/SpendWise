@@ -1,5 +1,7 @@
 package com.corner.myshoppinglist.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -7,8 +9,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.corner.myshoppinglist.viewmodel.BackupStatus
 import com.corner.myshoppinglist.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,6 +23,50 @@ fun SettingsScreen(
     onNavigateToLibrary: () -> Unit
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var pendingBackupData by remember { mutableStateOf<String?>(null) }
+    var showExportOptions by remember { mutableStateOf(false) }
+
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            pendingBackupData?.let { data ->
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(data.toByteArray())
+                }
+                pendingBackupData = null
+            }
+        }
+    }
+
+    val openDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.openInputStream(it)?.use { inputStream ->
+                val jsonData = inputStream.bufferedReader().use { reader -> reader.readText() }
+                viewModel.restoreData(jsonData)
+            }
+        }
+    }
+
+    LaunchedEffect(backupStatus) {
+        when (val status = backupStatus) {
+            is BackupStatus.Success -> {
+                snackbarHostState.showSnackbar(status.message)
+                viewModel.resetBackupStatus()
+            }
+            is BackupStatus.Error -> {
+                snackbarHostState.showSnackbar(status.message)
+                viewModel.resetBackupStatus()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -30,7 +78,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -80,6 +129,60 @@ fun SettingsScreen(
                 supportingContent = { Text("View and edit all items ever added") },
                 modifier = Modifier.clickable { onNavigateToLibrary() }
             )
+
+            ListItem(
+                headlineContent = { Text("Backup Data") },
+                supportingContent = { Text("Export your items and lists to a file") },
+                modifier = Modifier.clickable { showExportOptions = true }
+            )
+
+            ListItem(
+                headlineContent = { Text("Restore Data") },
+                supportingContent = { Text("Import data from a previously exported file") },
+                modifier = Modifier.clickable { 
+                    openDocumentLauncher.launch(arrayOf("application/json"))
+                }
+            )
+            
+            if (showExportOptions) {
+                AlertDialog(
+                    onDismissRequest = { showExportOptions = false },
+                    title = { Text("Backup Data") },
+                    text = {
+                        Column {
+                            Text("Choose what to export:")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(onClick = {
+                                viewModel.exportData(itemsOnly = true) { data ->
+                                    pendingBackupData = data
+                                    createDocumentLauncher.launch("shopping_items_backup.json")
+                                }
+                                showExportOptions = false
+                            }) {
+                                Text("Smart Item Library Only")
+                            }
+                            TextButton(onClick = {
+                                viewModel.exportData(itemsOnly = false) { data ->
+                                    pendingBackupData = data
+                                    createDocumentLauncher.launch("full_shopping_backup.json")
+                                }
+                                showExportOptions = false
+                            }) {
+                                Text("All Data (Items, Lists, Categories, Stores)")
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showExportOptions = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            if (backupStatus is BackupStatus.Loading) {
+                CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+            }
             
             if (showCurrencyDialog) {
                 val currencies = listOf("$", "€", "£", "¥", "Rp")
