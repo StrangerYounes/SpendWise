@@ -1,7 +1,9 @@
 package com.corner.myshoppinglist.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -18,6 +20,10 @@ fun NavGraph(navController: NavHostController) {
     val app = context.applicationContext as ShoppingApplication
     val repository = app.repository
     val settingsRepository = app.settingsRepository
+    
+    val receiptViewModel: ReceiptViewModel = viewModel(
+        factory = ReceiptViewModelFactory(repository)
+    )
 
     NavHost(
         navController = navController,
@@ -37,6 +43,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToStats = {
                     navController.navigate(Screen.Stats.route)
+                },
+                onNavigateToScanner = {
+                    navController.navigate(Screen.ReceiptScanner.route)
                 }
             )
         }
@@ -79,6 +88,31 @@ fun NavGraph(navController: NavHostController) {
             StatsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.ReceiptScanner.route) {
+            ReceiptScannerScreen(
+                viewModel = receiptViewModel,
+                onNavigateToReview = {
+                    navController.navigate(Screen.ReceiptReview.route)
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.ReceiptReview.route) {
+            val shoppingViewModel: ShoppingViewModel = viewModel(
+                factory = ShoppingViewModelFactory(repository, settingsRepository)
+            )
+            val shoppingLists by shoppingViewModel.shoppingLists.collectAsStateWithLifecycle()
+            
+            ReceiptReviewScreen(
+                viewModel = receiptViewModel,
+                shoppingLists = shoppingLists,
+                onNavigateBack = { navController.popBackStack() },
+                onFinish = {
+                    receiptViewModel.reset()
+                    navController.popBackStack(Screen.Home.route, inclusive = false)
+                }
             )
         }
     }

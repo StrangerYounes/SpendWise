@@ -34,7 +34,8 @@ fun HomeScreen(
     viewModel: ShoppingViewModel,
     onNavigateToDetail: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToStats: () -> Unit
+    onNavigateToStats: () -> Unit,
+    onNavigateToScanner: () -> Unit
 ) {
     val shoppingLists by viewModel.shoppingLists.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -63,6 +64,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("SpendWise") },
                 actions = {
+                    IconButton(onClick = onNavigateToScanner) {
+                        Icon(Icons.Default.DocumentScanner, contentDescription = "Scan Receipt")
+                    }
                     IconButton(onClick = { showCategoryDialog = true }) {
                         Icon(Icons.Default.Category, contentDescription = "Categories")
                     }
