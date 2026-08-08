@@ -132,6 +132,17 @@ public class ChallengeRepository {
                 });
     }
 
+    public void updateMemberSkips(String challengeId, String userId, int skipCount, RepositoryCallback<Void> callback) {
+        firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
+                .update("memberSkips." + userId, skipCount)
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
     public void updateTask(String challengeId, ChallengeTask task, RepositoryCallback<Void> callback) {
         firestore.collection(COLLECTION_CHALLENGES).document(challengeId)
                 .collection(SUBCOLLECTION_TASKS).document(task.getId())
@@ -281,8 +292,8 @@ public class ChallengeRepository {
 
                     batch.update(ref, "archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayUnion(userId));
 
-                    // Mark as completed if it's currently active
-                    if (ChallengeStatus.ACTIVE.getValue().equals(challenge.getStatus())) {
+                    // Mark as completed if it's currently active and user is the creator
+                    if (userId.equals(challenge.getCreatedBy()) && ChallengeStatus.ACTIVE.getValue().equals(challenge.getStatus())) {
                         batch.update(ref, "status", ChallengeStatus.COMPLETED.getValue());
                     }
 
@@ -310,8 +321,9 @@ public class ChallengeRepository {
 
                     batch.update(ref, "archivedMemberIds", com.google.firebase.firestore.FieldValue.arrayRemove(userId));
 
-                    // Restore to active if it was completed and hasn't expired yet
-                    if (ChallengeStatus.COMPLETED.getValue().equals(challenge.getStatus())
+                    // Restore to active if it was completed and hasn't expired yet and user is the creator
+                    if (userId.equals(challenge.getCreatedBy()) 
+                            && ChallengeStatus.COMPLETED.getValue().equals(challenge.getStatus())
                             && challenge.getEndDate() != null
                             && challenge.getEndDate().compareTo(com.google.firebase.Timestamp.now()) > 0) {
                         batch.update(ref, "status", ChallengeStatus.ACTIVE.getValue());
