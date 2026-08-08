@@ -22,7 +22,7 @@ fun NavGraph(navController: NavHostController) {
     val settingsRepository = app.settingsRepository
     
     val receiptViewModel: ReceiptViewModel = viewModel(
-        factory = ReceiptViewModelFactory(repository)
+        factory = ReceiptViewModelFactory(repository, settingsRepository)
     )
 
     NavHost(
@@ -96,7 +96,10 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateToReview = {
                     navController.navigate(Screen.ReceiptReview.route)
                 },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { 
+                    receiptViewModel.reset()
+                    navController.popBackStack() 
+                }
             )
         }
         composable(Screen.ReceiptReview.route) {
@@ -108,7 +111,10 @@ fun NavGraph(navController: NavHostController) {
             ReceiptReviewScreen(
                 viewModel = receiptViewModel,
                 shoppingLists = shoppingLists,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { 
+                    receiptViewModel.reset()
+                    navController.popBackStack() 
+                },
                 onFinish = {
                     receiptViewModel.reset()
                     navController.popBackStack(Screen.Home.route, inclusive = false)

@@ -45,7 +45,10 @@ fun ReceiptScannerScreen(
             TopAppBar(
                 title = { Text("Scan Receipt") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        viewModel.reset()
+                        onNavigateBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

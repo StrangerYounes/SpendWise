@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.corner.myshoppinglist.data.local.entities.ShoppingItem
 import com.corner.myshoppinglist.data.model.ScannedItem
+import com.corner.myshoppinglist.data.repository.SettingsRepository
 import com.corner.myshoppinglist.data.repository.ShoppingRepository
 import com.corner.myshoppinglist.util.ReceiptParser
 import com.google.mlkit.vision.common.InputImage
@@ -16,16 +17,31 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class ReceiptViewModel(private val repository: ShoppingRepository) : ViewModel() {
+class ReceiptViewModel(
+    private val repository: ShoppingRepository,
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ReceiptUiState>(ReceiptUiState.Idle)
     val uiState: StateFlow<ReceiptUiState> = _uiState.asStateFlow()
 
     private val _scannedItems = MutableStateFlow<List<ScannedItem>>(emptyList())
     val scannedItems: StateFlow<List<ScannedItem>> = _scannedItems.asStateFlow()
+
+    private val _conversionRate = MutableStateFlow(1.0)
+    val conversionRate: StateFlow<Double> = _conversionRate.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            settingsRepository.settings.first()?.let {
+                _conversionRate.value = it.lastConversionRate
+            }
+        }
+    }
 
     fun processReceiptImage(context: Context, uri: Uri) {
         viewModelScope.launch {
@@ -61,18 +77,38 @@ class ReceiptViewModel(private val repository: ShoppingRepository) : ViewModel()
         }
     }
 
+    fun removeItem(itemId: String) {
+        _scannedItems.value = _scannedItems.value.filter { it.id != itemId }
+    }
+
+    fun setConversionRate(rate: Double) {
+        _conversionRate.value = rate
+        viewModelScope.launch {
+            val currentSettings = settingsRepository.settings.first() ?: com.corner.myshoppinglist.data.local.entities.AppSettings()
+            settingsRepository.updateSettings(currentSettings.copy(lastConversionRate = rate))
+        }
+    }
+
     fun saveItemsToList(listId: Long, onComplete: () -> Unit) {
         viewModelScope.launch {
             _uiState.value = ReceiptUiState.Saving
             val selectedItems = _scannedItems.value.filter { it.isSelected }
+            val rate = _conversionRate.value
             
             selectedItems.forEach { scanned ->
+                val totalInBaseCurrency = (scanned.totalPrice ?: 0.0) / rate
+                val unitPriceInBaseCurrency = totalInBaseCurrency / scanned.quantity
+                
+                // Round to 2 decimal places before saving to DB
+                val roundedPrice = Math.round(unitPriceInBaseCurrency * 100.0) / 100.0
+                val roundedQty = Math.round(scanned.quantity * 100.0) / 100.0
+
                 val shoppingItem = ShoppingItem(
                     listId = listId,
                     itemName = scanned.name,
-                    actualPrice = scanned.totalPrice,
-                    estimatedPrice = scanned.unitPrice,
-                    quantity = scanned.quantity,
+                    actualPrice = roundedPrice,
+                    estimatedPrice = roundedPrice,
+                    quantity = roundedQty,
                     unit = scanned.unit,
                     purchased = true // Receipt scanning implies purchase
                 )
@@ -87,6 +123,7 @@ class ReceiptViewModel(private val repository: ShoppingRepository) : ViewModel()
     fun reset() {
         _uiState.value = ReceiptUiState.Idle
         _scannedItems.value = emptyList()
+        // We don't reset conversion rate here because the user wants to remember it
     }
 }
 
@@ -99,11 +136,14 @@ sealed class ReceiptUiState {
     data class Error(val message: String) : ReceiptUiState()
 }
 
-class ReceiptViewModelFactory(private val repository: ShoppingRepository) : ViewModelProvider.Factory {
+class ReceiptViewModelFactory(
+    private val repository: ShoppingRepository,
+    private val settingsRepository: SettingsRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReceiptViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ReceiptViewModel(repository) as T
+            return ReceiptViewModel(repository, settingsRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
