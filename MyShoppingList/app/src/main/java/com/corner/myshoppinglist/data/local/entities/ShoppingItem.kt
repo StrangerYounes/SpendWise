@@ -37,5 +37,6 @@ data class ShoppingItem(
     val purchased: Boolean = false,
     val orderIndex: Int = 0,
     val notes: String? = null,
-    val storeId: Long? = null
+    val storeId: Long? = null,
+    val isTracked: Boolean = false
 )

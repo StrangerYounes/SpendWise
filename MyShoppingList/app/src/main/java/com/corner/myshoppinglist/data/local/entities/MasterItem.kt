@@ -7,10 +7,11 @@ import androidx.room.PrimaryKey
 data class MasterItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val averagePrice: Double = 0.0,
-    val lastPrice: Double = 0.0,
-    val lowestPrice: Double = 0.0,
-    val highestPrice: Double = 0.0,
+    val averagePrice: Double = 0.0, // This will be price per 1 unit
+    val lastPrice: Double = 0.0,    // This will be price per 1 unit
+    val lowestPrice: Double = 0.0,  // Per unit
+    val highestPrice: Double = 0.0, // Per unit
     val purchaseCount: Int = 0,
-    val lastPurchaseDate: Long = 0
+    val lastPurchaseDate: Long = 0,
+    val totalQuantity: Double = 0.0
 )

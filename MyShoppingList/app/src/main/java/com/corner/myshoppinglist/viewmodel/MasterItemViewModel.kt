@@ -82,7 +82,16 @@ class MasterItemViewModel(
 
     fun addMasterItem(name: String, price: Double) {
         viewModelScope.launch {
-            repository.insertMasterItem(MasterItem(name = name, lastPrice = price, averagePrice = price))
+            repository.insertMasterItem(
+                MasterItem(
+                    name = name, 
+                    lastPrice = price, 
+                    averagePrice = price,
+                    purchaseCount = if (price > 0) 1 else 0,
+                    lowestPrice = if (price > 0) price else 0.0,
+                    highestPrice = if (price > 0) price else 0.0
+                )
+            )
         }
     }
 

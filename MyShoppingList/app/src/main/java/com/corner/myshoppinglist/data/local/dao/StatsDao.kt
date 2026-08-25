@@ -16,6 +16,16 @@ interface StatsDao {
     fun getItemStats(): Flow<List<ItemStat>>
 
     @Query("""
+        SELECT itemName, SUM(quantity) as totalQuantity, SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
+        FROM shopping_items si
+        JOIN shopping_lists sl ON si.listId = sl.id
+        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        GROUP BY itemName
+        ORDER BY totalSpent DESC
+    """)
+    fun getItemStatsFiltered(startDate: Long, endDate: Long): Flow<List<ItemStat>>
+
+    @Query("""
         SELECT itemName, MAX(COALESCE(actualPrice, estimatedPrice, 0)) as maxPrice
         FROM shopping_items
         WHERE purchased = 1
@@ -24,6 +34,17 @@ interface StatsDao {
         LIMIT 5
     """)
     fun getMostExpensiveItems(): Flow<List<ExpensiveItem>>
+
+    @Query("""
+        SELECT itemName, MAX(COALESCE(si.actualPrice, si.estimatedPrice, 0)) as maxPrice
+        FROM shopping_items si
+        JOIN shopping_lists sl ON si.listId = sl.id
+        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        GROUP BY itemName
+        ORDER BY maxPrice DESC
+        LIMIT 5
+    """)
+    fun getMostExpensiveItemsFiltered(startDate: Long, endDate: Long): Flow<List<ExpensiveItem>>
 
     @Query("""
         SELECT 
@@ -36,6 +57,18 @@ interface StatsDao {
         ORDER BY period DESC
     """)
     fun getSpentPerMonth(): Flow<List<PeriodStat>>
+
+    @Query("""
+        SELECT 
+            strftime('%Y-%m', createdDate / 1000, 'unixepoch') as period,
+            SUM(COALESCE(actualPrice, estimatedPrice, 0) * quantity) as totalSpent
+        FROM shopping_items si
+        JOIN shopping_lists sl ON si.listId = sl.id
+        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        GROUP BY period
+        ORDER BY period DESC
+    """)
+    fun getSpentPerMonthFiltered(startDate: Long, endDate: Long): Flow<List<PeriodStat>>
 
     @Query("""
         SELECT 
@@ -53,15 +86,43 @@ interface StatsDao {
 
     @Query("""
         SELECT 
+            c.name as categoryName,
+            c.color as categoryColor,
+            SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
+        FROM shopping_items si
+        JOIN shopping_lists sl ON si.listId = sl.id
+        JOIN categories c ON COALESCE(sl.categoryId, (SELECT id FROM categories WHERE name = 'Groceries' LIMIT 1)) = c.id
+        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        GROUP BY c.id
+        ORDER BY totalSpent DESC
+    """)
+    fun getSpentByCategoryFiltered(startDate: Long, endDate: Long): Flow<List<CategoryStat>>
+
+    @Query("""
+        SELECT 
             s.name as storeName,
             SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
         FROM shopping_items si
-        JOIN stores s ON si.storeId = s.id
+        JOIN shopping_lists sl ON si.listId = sl.id
+        JOIN stores s ON COALESCE(si.storeId, sl.storeId) = s.id
         WHERE si.purchased = 1
         GROUP BY s.id
         ORDER BY totalSpent DESC
     """)
     fun getSpentByStore(): Flow<List<StoreStat>>
+
+    @Query("""
+        SELECT 
+            s.name as storeName,
+            SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
+        FROM shopping_items si
+        JOIN shopping_lists sl ON si.listId = sl.id
+        JOIN stores s ON COALESCE(si.storeId, sl.storeId) = s.id
+        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        GROUP BY s.id
+        ORDER BY totalSpent DESC
+    """)
+    fun getSpentByStoreFiltered(startDate: Long, endDate: Long): Flow<List<StoreStat>>
 }
 
 data class ItemStat(

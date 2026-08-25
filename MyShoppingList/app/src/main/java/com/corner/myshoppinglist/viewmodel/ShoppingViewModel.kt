@@ -7,6 +7,7 @@ import com.corner.myshoppinglist.data.local.dao.ShoppingListWithDetails
 import com.corner.myshoppinglist.data.local.entities.ShoppingList
 import com.corner.myshoppinglist.data.repository.SettingsRepository
 import com.corner.myshoppinglist.data.repository.ShoppingRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -31,21 +32,38 @@ class ShoppingViewModel(
         .map { it?.currencySymbol ?: "$" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "$")
 
-    val itemStats = repository.itemStats.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
-    val expensiveItems = repository.expensiveItems.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
-    val spentPerMonth = repository.spentPerMonth.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
-    val spentByCategory = repository.spentByCategory.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
-    val spentByStore = repository.spentByStore.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
+    private val _dateRange = MutableStateFlow<Pair<Long, Long>?>(null)
+    val dateRange: StateFlow<Pair<Long, Long>?> = _dateRange.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val itemStats = _dateRange.flatMapLatest { range ->
+        if (range == null) repository.itemStats
+        else repository.getItemStats(range.first, range.second)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val expensiveItems = _dateRange.flatMapLatest { range ->
+        if (range == null) repository.expensiveItems
+        else repository.getExpensiveItems(range.first, range.second)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val spentPerMonth = _dateRange.flatMapLatest { range ->
+        if (range == null) repository.spentPerMonth
+        else repository.getSpentPerMonth(range.first, range.second)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val spentByCategory = _dateRange.flatMapLatest { range ->
+        if (range == null) repository.spentByCategory
+        else repository.getSpentByCategory(range.first, range.second)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val spentByStore = _dateRange.flatMapLatest { range ->
+        if (range == null) repository.spentByStore
+        else repository.getSpentByStore(range.first, range.second)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         viewModelScope.launch {
@@ -102,6 +120,14 @@ class ShoppingViewModel(
     fun setListCategory(shoppingList: ShoppingList, categoryId: Long?) {
         viewModelScope.launch {
             repository.updateShoppingList(shoppingList.copy(categoryId = categoryId))
+        }
+    }
+
+    fun setDateRange(startDate: Long?, endDate: Long?) {
+        if (startDate == null || endDate == null) {
+            _dateRange.value = null
+        } else {
+            _dateRange.value = Pair(startDate, endDate)
         }
     }
 

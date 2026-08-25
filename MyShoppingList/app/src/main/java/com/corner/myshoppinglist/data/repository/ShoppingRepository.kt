@@ -52,6 +52,12 @@ class ShoppingRepository(
     val spentByCategory: Flow<List<CategoryStat>> = statsDao.getSpentByCategory()
     val spentByStore: Flow<List<StoreStat>> = statsDao.getSpentByStore()
 
+    fun getItemStats(startDate: Long, endDate: Long) = statsDao.getItemStatsFiltered(startDate, endDate)
+    fun getExpensiveItems(startDate: Long, endDate: Long) = statsDao.getMostExpensiveItemsFiltered(startDate, endDate)
+    fun getSpentPerMonth(startDate: Long, endDate: Long) = statsDao.getSpentPerMonthFiltered(startDate, endDate)
+    fun getSpentByCategory(startDate: Long, endDate: Long) = statsDao.getSpentByCategoryFiltered(startDate, endDate)
+    fun getSpentByStore(startDate: Long, endDate: Long) = statsDao.getSpentByStoreFiltered(startDate, endDate)
+
     fun searchShoppingLists(query: String): Flow<List<ShoppingListWithDetails>> =
         shoppingListDao.searchShoppingListsWithDetails(query)
 
@@ -76,11 +82,14 @@ class ShoppingRepository(
     }
 
     suspend fun updateShoppingItem(item: ShoppingItem) {
-        shoppingItemDao.updateItem(item)
-
-        // If item is purchased and has a price (actual or estimated), update tracking
-        if (item.purchased) {
-            updateMasterItem(item)
+        // If item was already tracked, just update the item itself
+        // If it's newly purchased and not tracked, update the master item too
+        if (item.purchased && !item.isTracked) {
+            val updatedItem = item.copy(isTracked = true)
+            shoppingItemDao.updateItem(updatedItem)
+            updateMasterItem(updatedItem)
+        } else {
+            shoppingItemDao.updateItem(item)
         }
     }
 
@@ -134,18 +143,23 @@ class ShoppingRepository(
             }
         }
 
-        // 3. Recalculate target item stats
-        val totalCount = targetItem.purchaseCount + sourceItem.purchaseCount
-        val newAverage = if (totalCount > 0) {
-            (targetItem.averagePrice * targetItem.purchaseCount + sourceItem.averagePrice * sourceItem.purchaseCount) / totalCount
+        // 3. Recalculate target item stats using simple average of unit prices
+        val totalPurchaseCount = targetItem.purchaseCount + sourceItem.purchaseCount
+        val totalQty = targetItem.totalQuantity + sourceItem.totalQuantity
+        val newAverage = if (totalPurchaseCount > 0) {
+            (targetItem.averagePrice * targetItem.purchaseCount + sourceItem.averagePrice * sourceItem.purchaseCount) / totalPurchaseCount
         } else targetItem.averagePrice
 
         val updatedTarget = targetItem.copy(
             averagePrice = newAverage,
             lastPrice = if (sourceItem.lastPurchaseDate > targetItem.lastPurchaseDate) sourceItem.lastPrice else targetItem.lastPrice,
-            lowestPrice = minOf(targetItem.lowestPrice, sourceItem.lowestPrice),
+            lowestPrice = if (targetItem.purchaseCount == 0 && sourceItem.purchaseCount == 0) 0.0
+                          else if (targetItem.purchaseCount == 0) sourceItem.lowestPrice
+                          else if (sourceItem.purchaseCount == 0) targetItem.lowestPrice
+                          else minOf(targetItem.lowestPrice, sourceItem.lowestPrice),
             highestPrice = maxOf(targetItem.highestPrice, sourceItem.highestPrice),
-            purchaseCount = totalCount,
+            totalQuantity = totalQty,
+            purchaseCount = totalPurchaseCount,
             lastPurchaseDate = maxOf(targetItem.lastPurchaseDate, sourceItem.lastPurchaseDate)
         )
         masterItemDao.updateMasterItem(updatedTarget)
@@ -164,7 +178,8 @@ class ShoppingRepository(
         if (categoryName != "Groceries") return
 
         val name = shoppingItem.itemName
-        val price = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice ?: 0.0
+        val unitPrice = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice ?: 0.0
+        val qty = shoppingItem.quantity
         val date = System.currentTimeMillis()
 
         // Get effective storeId: item-level override OR list-level default
@@ -174,22 +189,25 @@ class ShoppingRepository(
         val masterId = if (existingMaster == null) {
             val newMaster = MasterItem(
                 name = name,
-                averagePrice = price,
-                lastPrice = price,
-                lowestPrice = price,
-                highestPrice = price,
+                averagePrice = unitPrice,
+                lastPrice = unitPrice,
+                lowestPrice = unitPrice,
+                highestPrice = unitPrice,
+                totalQuantity = qty,
                 purchaseCount = 1,
                 lastPurchaseDate = date
             )
             masterItemDao.insertMasterItem(newMaster)
         } else {
             val newCount = existingMaster.purchaseCount + 1
-            val newAverage = (existingMaster.averagePrice * existingMaster.purchaseCount + price) / newCount
+            val newAverage = (existingMaster.averagePrice * existingMaster.purchaseCount + unitPrice) / newCount
+            
             val updatedMaster = existingMaster.copy(
                 averagePrice = newAverage,
-                lastPrice = price,
-                lowestPrice = minOf(existingMaster.lowestPrice, price),
-                highestPrice = maxOf(existingMaster.highestPrice, price),
+                lastPrice = unitPrice,
+                lowestPrice = if (existingMaster.purchaseCount == 0) unitPrice else minOf(existingMaster.lowestPrice, unitPrice),
+                highestPrice = maxOf(existingMaster.highestPrice, unitPrice),
+                totalQuantity = existingMaster.totalQuantity + qty,
                 purchaseCount = newCount,
                 lastPurchaseDate = date
             )
@@ -205,18 +223,18 @@ class ShoppingRepository(
                     StoreItemPrice(
                         masterItemId = masterId,
                         storeId = effectiveStoreId,
-                        lastPrice = price,
-                        lowestPrice = price,
-                        highestPrice = price,
+                        lastPrice = unitPrice,
+                        lowestPrice = unitPrice,
+                        highestPrice = unitPrice,
                         lastUpdated = date
                     )
                 )
             } else {
                 storeDao.insertStorePrice(
                     existingStorePrice.copy(
-                        lastPrice = price,
-                        lowestPrice = minOf(existingStorePrice.lowestPrice, price),
-                        highestPrice = maxOf(existingStorePrice.highestPrice, price),
+                        lastPrice = unitPrice,
+                        lowestPrice = minOf(existingStorePrice.lowestPrice, unitPrice),
+                        highestPrice = maxOf(existingStorePrice.highestPrice, unitPrice),
                         lastUpdated = date
                     )
                 )
