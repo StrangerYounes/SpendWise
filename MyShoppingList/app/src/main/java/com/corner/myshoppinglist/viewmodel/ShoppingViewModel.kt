@@ -136,6 +136,18 @@ class ShoppingViewModel(
             repository.insertCategory(com.corner.myshoppinglist.data.local.entities.Category(name = name, color = color))
         }
     }
+
+    fun updateCategory(category: com.corner.myshoppinglist.data.local.entities.Category) {
+        viewModelScope.launch {
+            repository.updateCategory(category)
+        }
+    }
+
+    fun deleteCategory(category: com.corner.myshoppinglist.data.local.entities.Category) {
+        viewModelScope.launch {
+            repository.deleteCategory(category)
+        }
+    }
 }
 
 class ShoppingViewModelFactory(

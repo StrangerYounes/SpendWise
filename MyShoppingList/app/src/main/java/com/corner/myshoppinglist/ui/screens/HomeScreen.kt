@@ -1,15 +1,15 @@
 package com.corner.myshoppinglist.ui.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,14 +17,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.corner.myshoppinglist.data.local.dao.ShoppingListWithDetails
 import com.corner.myshoppinglist.viewmodel.ShoppingViewModel
+import android.graphics.Color as AndroidColor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -360,56 +368,68 @@ fun HomeScreen(
     }
 
     if (showCategoryDialog) {
-        var newCategoryName by remember { mutableStateOf("") }
-        val predefinedColors = listOf(
-            0xFFF44336, 0xFFE91E63, 0xFF9C27B0, 0xFF673AB7,
-            0xFF3F51B5, 0xFF2196F3, 0xFF03A9F4, 0xFF00BCD4,
-            0xFF009688, 0xFF4CAF50, 0xFF8BC34A, 0xFFCDDC39,
-            0xFFFFEB3B, 0xFFFFC107, 0xFFFF9800, 0xFFFF5722
-        )
-        var selectedColor by remember { mutableStateOf(predefinedColors[9]) } // Default green
+        var categoryName by remember { mutableStateOf("") }
+        var editingCategory by remember { mutableStateOf<com.corner.myshoppinglist.data.local.entities.Category?>(null) }
+        var selectedColor by remember { mutableStateOf(0xFF4CAF50.toInt()) } // Default green
 
         AlertDialog(
-            onDismissRequest = { showCategoryDialog = false },
-            title = { Text("Manage Categories") },
+            onDismissRequest = { 
+                showCategoryDialog = false
+                editingCategory = null
+                categoryName = ""
+                selectedColor = 0xFF4CAF50.toInt()
+            },
+            title = { Text(if (editingCategory == null) "Manage Categories" else "Edit Category") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Existing Categories", style = MaterialTheme.typography.titleSmall)
-                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                        items(categories) { category ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier.size(16.dp)
-                                            .background(Color(category.color), MaterialTheme.shapes.extraSmall)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(category.name)
-                                }
-                                if (category.name != "Groceries") {
-                                    IconButton(onClick = { /* Could add delete functionality */ }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+                    if (editingCategory == null) {
+                        Text("Existing Categories", style = MaterialTheme.typography.titleSmall)
+                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                            items(categories) { category ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            editingCategory = category
+                                            categoryName = category.name
+                                            selectedColor = category.color
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier.size(16.dp)
+                                                .background(Color(category.color), MaterialTheme.shapes.extraSmall)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(category.name)
+                                    }
+                                    if (category.name != "Groceries") {
+                                        IconButton(onClick = { viewModel.deleteCategory(category) }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+                                        }
                                     }
                                 }
                             }
                         }
+                        HorizontalDivider()
                     }
 
-                    HorizontalDivider()
-
-                    Text("Add New Category", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        if (editingCategory == null) "Add New Category" else "Edit Category Settings", 
+                        style = MaterialTheme.typography.titleSmall
+                    )
                     TextField(
-                        value = newCategoryName,
-                        onValueChange = { newCategoryName = it },
+                        value = categoryName,
+                        onValueChange = { categoryName = it },
                         placeholder = { Text("Category name") },
                         singleLine = true,
+                        enabled = editingCategory?.name != "Groceries",
                         trailingIcon = {
-                            if (newCategoryName.isNotEmpty()) {
-                                IconButton(onClick = { newCategoryName = "" }) {
+                            if (categoryName.isNotEmpty() && editingCategory?.name != "Groceries") {
+                                IconButton(onClick = { categoryName = "" }) {
                                     Icon(Icons.Default.Clear, contentDescription = "Clear")
                                 }
                             }
@@ -418,47 +438,211 @@ fun HomeScreen(
                     )
                     
                     Text("Select Color", style = MaterialTheme.typography.labelSmall)
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(4),
-                        modifier = Modifier.height(120.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(predefinedColors.size) { index ->
-                            val colorInt = predefinedColors[index]
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(Color(colorInt), CircleShape)
-                                    .clickable { selectedColor = colorInt }
-                                    .border(
-                                        width = if (selectedColor == colorInt) 2.dp else 0.dp,
-                                        color = if (selectedColor == colorInt) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                        shape = CircleShape
-                                    )
-                            )
-                        }
-                    }
+                    
+                    HsvColorPicker(
+                        initialColor = selectedColor,
+                        onColorChanged = { selectedColor = it }
+                    )
                 }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (newCategoryName.isNotBlank()) {
-                            viewModel.addCategory(newCategoryName, selectedColor.toInt())
-                            newCategoryName = ""
+                        if (categoryName.isNotBlank()) {
+                            val currentEditing = editingCategory
+                            if (currentEditing != null) {
+                                viewModel.updateCategory(currentEditing.copy(name = categoryName, color = selectedColor))
+                                editingCategory = null
+                                categoryName = ""
+                                selectedColor = 0xFF4CAF50.toInt()
+                            } else {
+                                viewModel.addCategory(categoryName, selectedColor)
+                                categoryName = ""
+                                selectedColor = 0xFF4CAF50.toInt()
+                            }
                         }
                     }
                 ) {
-                    Text("Add")
+                    Text(if (editingCategory == null) "Add" else "Save")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCategoryDialog = false }) {
-                    Text("Close")
+                TextButton(
+                    onClick = { 
+                        if (editingCategory != null) {
+                            editingCategory = null
+                            categoryName = ""
+                            selectedColor = 0xFF4CAF50.toInt()
+                        } else {
+                            showCategoryDialog = false 
+                        }
+                    }
+                ) {
+                    Text(if (editingCategory == null) "Close" else "Cancel")
                 }
             }
         )
+    }
+}
+
+@Composable
+fun HsvColorPicker(
+    initialColor: Int,
+    onColorChanged: (Int) -> Unit
+) {
+    val hsv = remember(initialColor) {
+        val res = FloatArray(3)
+        AndroidColor.colorToHSV(initialColor, res)
+        res
+    }
+
+    var hue by remember(initialColor) { mutableStateOf(hsv[0]) }
+    var saturation by remember(initialColor) { mutableStateOf(hsv[1]) }
+    var value by remember(initialColor) { mutableStateOf(hsv[2]) }
+
+    val currentColor = remember(hue, saturation, value) {
+        AndroidColor.HSVToColor(floatArrayOf(hue, saturation, value))
+    }
+
+    LaunchedEffect(currentColor) {
+        onColorChanged(currentColor)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Saturation-Value Box
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Gray)
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(hue) {
+                        detectTapGestures { offset ->
+                            saturation = (offset.x / size.width).coerceIn(0f, 1f)
+                            value = (1f - (offset.y / size.height)).coerceIn(0f, 1f)
+                        }
+                    }
+                    .pointerInput(hue) {
+                        detectDragGestures { change, _ ->
+                            saturation = (change.position.x / size.width).coerceIn(0f, 1f)
+                            value = (1f - (change.position.y / size.height)).coerceIn(0f, 1f)
+                        }
+                    }
+            ) {
+                // Hue base
+                drawRect(Color(AndroidColor.HSVToColor(floatArrayOf(hue, 1f, 1f))))
+
+                // Saturation gradient (White to Transparent)
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(Color.White, Color.Transparent)
+                    )
+                )
+
+                // Value gradient (Transparent to Black)
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black)
+                    )
+                )
+
+                // Selection cursor
+                val cursorX = saturation * size.width
+                val cursorY = (1f - value) * size.height
+                drawCircle(
+                    color = if (value > 0.5f) Color.Black else Color.White,
+                    radius = 8.dp.toPx(),
+                    center = Offset(cursorX, cursorY),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+                drawCircle(
+                    color = Color.White,
+                    radius = 6.dp.toPx(),
+                    center = Offset(cursorX, cursorY),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+        }
+
+        // Hue Slider
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .clip(RoundedCornerShape(12.dp))
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            hue = (offset.x / size.width).coerceIn(0f, 1f) * 360f
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, _ ->
+                            hue = (change.position.x / size.width).coerceIn(0f, 1f) * 360f
+                        }
+                    }
+            ) {
+                val hueColors = listOf(
+                    Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+                )
+                drawRect(brush = Brush.horizontalGradient(hueColors))
+
+                // Cursor
+                val cursorX = (hue / 360f) * size.width
+                drawRect(
+                    color = Color.White,
+                    topLeft = Offset(cursorX - 2.dp.toPx(), 0f),
+                    size = androidx.compose.ui.geometry.Size(4.dp.toPx(), size.height),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+        }
+
+        // Preview and Hex Input
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(currentColor))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            )
+            
+            var hexString by remember(currentColor) {
+                mutableStateOf(String.format("%06X", (0xFFFFFF and currentColor)))
+            }
+
+            OutlinedTextField(
+                value = hexString,
+                onValueChange = {
+                    hexString = it.uppercase().filter { c -> c in "0123456789ABCDEF" }.take(6)
+                    if (hexString.length == 6) {
+                        val parsed = AndroidColor.parseColor("#$hexString")
+                        val newHsv = FloatArray(3)
+                        AndroidColor.colorToHSV(parsed, newHsv)
+                        hue = newHsv[0]
+                        saturation = newHsv[1]
+                        value = newHsv[2]
+                    }
+                },
+                label = { Text("HEX") },
+                prefix = { Text("#") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            )
+        }
     }
 }
 
