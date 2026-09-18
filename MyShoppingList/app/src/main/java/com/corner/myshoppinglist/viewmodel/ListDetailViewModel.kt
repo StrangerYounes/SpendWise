@@ -7,6 +7,7 @@ import com.corner.myshoppinglist.data.local.dao.*
 import com.corner.myshoppinglist.data.local.entities.*
 import com.corner.myshoppinglist.data.repository.SettingsRepository
 import com.corner.myshoppinglist.data.repository.ShoppingRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -35,8 +36,32 @@ class ListDetailViewModel(
     private val _stores = MutableStateFlow<List<Store>>(emptyList())
     val stores: StateFlow<List<Store>> = _stores.asStateFlow()
 
-    private val _suggestions = MutableStateFlow<List<ItemSuggestion>>(emptyList())
-    val suggestions: StateFlow<List<ItemSuggestion>> = _suggestions.asStateFlow()
+    private val _suggestionQuery = MutableStateFlow("")
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val suggestions: StateFlow<List<ItemSuggestion>> = _suggestionQuery
+        .flatMapLatest { query ->
+            if (query.isNotEmpty()) {
+                repository.searchMasterItems(query).map { masterItems ->
+                    val listStoreId = _shoppingList.value?.storeId
+                    masterItems.map { master ->
+                        val cheapest = repository.getCheapestPriceForItem(master.id)
+                        val cheapestStore = cheapest?.let { repository.getStoreById(it.storeId) }
+                        val atListStore = listStoreId?.let { repository.getPriceForItemAtStore(master.id, it) }
+                        
+                        ItemSuggestion(
+                            masterItem = master,
+                            bestPrice = cheapest?.lastPrice,
+                            bestStoreName = cheapestStore?.name,
+                            listStorePrice = atListStore?.lastPrice
+                        )
+                    }
+                }
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val currencySymbol: StateFlow<String> = settingsRepository.settings
         .map { it?.currencySymbol ?: "$" }
@@ -75,28 +100,7 @@ class ListDetailViewModel(
     }
 
     fun searchSuggestions(query: String) {
-        viewModelScope.launch {
-            if (query.length >= 1) {
-                repository.searchMasterItems(query).collectLatest { masterItems ->
-                    val listStoreId = _shoppingList.value?.storeId
-                    val suggested = masterItems.map { master ->
-                        val cheapest = repository.getCheapestPriceForItem(master.id)
-                        val cheapestStore = cheapest?.let { repository.getStoreById(it.storeId) }
-                        val atListStore = listStoreId?.let { repository.getPriceForItemAtStore(master.id, it) }
-                        
-                        ItemSuggestion(
-                            masterItem = master,
-                            bestPrice = cheapest?.lastPrice,
-                            bestStoreName = cheapestStore?.name,
-                            listStorePrice = atListStore?.lastPrice
-                        )
-                    }
-                    _suggestions.value = suggested
-                }
-            } else {
-                _suggestions.value = emptyList()
-            }
-        }
+        _suggestionQuery.value = query
     }
 
     fun addItem(

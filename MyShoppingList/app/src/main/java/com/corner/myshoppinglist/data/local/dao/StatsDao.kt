@@ -19,7 +19,7 @@ interface StatsDao {
         SELECT itemName, SUM(quantity) as totalQuantity, SUM(COALESCE(si.actualPrice, si.estimatedPrice, 0) * si.quantity) as totalSpent
         FROM shopping_items si
         JOIN shopping_lists sl ON si.listId = sl.id
-        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        WHERE si.purchased = 1 AND COALESCE(sl.completedDate, sl.createdDate) BETWEEN :startDate AND :endDate
         GROUP BY itemName
         ORDER BY totalSpent DESC
     """)
@@ -39,7 +39,7 @@ interface StatsDao {
         SELECT itemName, MAX(COALESCE(si.actualPrice, si.estimatedPrice, 0)) as maxPrice
         FROM shopping_items si
         JOIN shopping_lists sl ON si.listId = sl.id
-        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        WHERE si.purchased = 1 AND COALESCE(sl.completedDate, sl.createdDate) BETWEEN :startDate AND :endDate
         GROUP BY itemName
         ORDER BY maxPrice DESC
         LIMIT 5
@@ -48,7 +48,7 @@ interface StatsDao {
 
     @Query("""
         SELECT 
-            strftime('%Y-%m', createdDate / 1000, 'unixepoch') as period,
+            strftime('%Y-%m', COALESCE(sl.completedDate, sl.createdDate) / 1000, 'unixepoch') as period,
             SUM(COALESCE(actualPrice, estimatedPrice, 0) * quantity) as totalSpent
         FROM shopping_items si
         JOIN shopping_lists sl ON si.listId = sl.id
@@ -60,11 +60,11 @@ interface StatsDao {
 
     @Query("""
         SELECT 
-            strftime('%Y-%m', createdDate / 1000, 'unixepoch') as period,
+            strftime('%Y-%m', COALESCE(sl.completedDate, sl.createdDate) / 1000, 'unixepoch') as period,
             SUM(COALESCE(actualPrice, estimatedPrice, 0) * quantity) as totalSpent
         FROM shopping_items si
         JOIN shopping_lists sl ON si.listId = sl.id
-        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        WHERE si.purchased = 1 AND COALESCE(sl.completedDate, sl.createdDate) BETWEEN :startDate AND :endDate
         GROUP BY period
         ORDER BY period DESC
     """)
@@ -92,7 +92,7 @@ interface StatsDao {
         FROM shopping_items si
         JOIN shopping_lists sl ON si.listId = sl.id
         JOIN categories c ON COALESCE(sl.categoryId, (SELECT id FROM categories WHERE name = 'Groceries' LIMIT 1)) = c.id
-        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        WHERE si.purchased = 1 AND COALESCE(sl.completedDate, sl.createdDate) BETWEEN :startDate AND :endDate
         GROUP BY c.id
         ORDER BY totalSpent DESC
     """)
@@ -118,7 +118,7 @@ interface StatsDao {
         FROM shopping_items si
         JOIN shopping_lists sl ON si.listId = sl.id
         JOIN stores s ON COALESCE(si.storeId, sl.storeId) = s.id
-        WHERE si.purchased = 1 AND sl.createdDate BETWEEN :startDate AND :endDate
+        WHERE si.purchased = 1 AND COALESCE(sl.completedDate, sl.createdDate) BETWEEN :startDate AND :endDate
         GROUP BY s.id
         ORDER BY totalSpent DESC
     """)

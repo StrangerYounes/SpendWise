@@ -16,17 +16,33 @@ class ShoppingViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _shoppingLists = MutableStateFlow<List<ShoppingListWithDetails>>(emptyList())
-    val shoppingLists: StateFlow<List<ShoppingListWithDetails>> = _shoppingLists.asStateFlow()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val shoppingLists: StateFlow<List<ShoppingListWithDetails>> = _searchQuery
+        .flatMapLatest { query ->
+            if (query.isEmpty()) {
+                repository.allShoppingLists
+            } else {
+                repository.searchShoppingLists(query)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val categories: StateFlow<List<com.corner.myshoppinglist.data.local.entities.Category>> = repository.allCategories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    private val _searchedItems = MutableStateFlow<List<com.corner.myshoppinglist.data.local.entities.ShoppingItem>>(emptyList())
-    val searchedItems: StateFlow<List<com.corner.myshoppinglist.data.local.entities.ShoppingItem>> = _searchedItems.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val searchedItems: StateFlow<List<com.corner.myshoppinglist.data.local.entities.ShoppingItem>> = _searchQuery
+        .flatMapLatest { query ->
+            if (query.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                repository.searchItems(query)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val currencySymbol: StateFlow<String> = settingsRepository.settings
         .map { it?.currencySymbol ?: "$" }
@@ -64,30 +80,6 @@ class ShoppingViewModel(
         if (range == null) repository.spentByStore
         else repository.getSpentByStore(range.first, range.second)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    init {
-        viewModelScope.launch {
-            _searchQuery.collectLatest { query ->
-                if (query.isEmpty()) {
-                    repository.allShoppingLists.collectLatest {
-                        _shoppingLists.value = it
-                    }
-                    _searchedItems.value = emptyList()
-                } else {
-                    launch {
-                        repository.searchShoppingLists(query).collectLatest {
-                            _shoppingLists.value = it
-                        }
-                    }
-                    launch {
-                        repository.searchItems(query).collectLatest {
-                            _searchedItems.value = it
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query

@@ -17,7 +17,7 @@ interface ShoppingListDao {
         LEFT JOIN shopping_items si ON sl.id = si.listId
         LEFT JOIN stores s ON sl.storeId = s.id
         GROUP BY sl.id
-        ORDER BY sl.createdDate DESC
+        ORDER BY CASE WHEN sl.isCompleted = 1 THEN sl.completedDate ELSE sl.createdDate END DESC
     """)
     fun getAllShoppingListsWithDetails(): Flow<List<ShoppingListWithDetails>>
 
@@ -47,7 +47,7 @@ interface ShoppingListDao {
         LEFT JOIN stores s ON sl.storeId = s.id
         WHERE sl.name LIKE '%' || :query || '%'
         GROUP BY sl.id
-        ORDER BY sl.createdDate DESC
+        ORDER BY CASE WHEN sl.isCompleted = 1 THEN sl.completedDate ELSE sl.createdDate END DESC
     """)
     fun searchShoppingListsWithDetails(query: String): Flow<List<ShoppingListWithDetails>>
 }

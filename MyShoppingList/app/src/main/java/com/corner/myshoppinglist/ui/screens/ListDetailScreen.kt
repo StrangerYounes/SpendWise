@@ -306,9 +306,13 @@ fun ListDetailScreen(
 
     if (showAddItemSheet) {
         AddItemBottomSheet(
-            onDismiss = { showAddItemSheet = false },
+            onDismiss = { 
+                viewModel.searchSuggestions("")
+                showAddItemSheet = false 
+            },
             onAddItem = { name, price, qty, unit, notes ->
                 viewModel.addItem(name, price, qty, unit, notes)
+                viewModel.searchSuggestions("")
                 showAddItemSheet = false
             },
             currencySymbol = currencySymbol,

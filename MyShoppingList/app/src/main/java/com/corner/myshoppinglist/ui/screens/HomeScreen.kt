@@ -698,7 +698,7 @@ fun ShoppingListCard(
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = dateFormat.format(Date(item.shoppingList.createdDate)),
+                            text = dateFormat.format(Date(if (item.shoppingList.isCompleted && item.shoppingList.completedDate != null) item.shoppingList.completedDate else item.shoppingList.createdDate)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

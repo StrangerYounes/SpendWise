@@ -206,7 +206,7 @@ fun StatsScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                spentByCategory.take(5).forEach { stat ->
+                                spentByCategory.forEach { stat ->
                                     CategoryLegendItem(stat, currencySymbol)
                                 }
                             }
