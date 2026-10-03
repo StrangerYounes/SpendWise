@@ -20,6 +20,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.corner.myshoppinglist.util.GeminiReceiptClient
+import kotlinx.coroutines.CancellationException
+import com.corner.myshoppinglist.BuildConfig
+
 
 class ReceiptViewModel(
     private val repository: ShoppingRepository,
@@ -47,18 +51,34 @@ class ReceiptViewModel(
         viewModelScope.launch {
             _uiState.value = ReceiptUiState.Processing
             try {
-                val image = InputImage.fromFilePath(context, uri)
-                val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-                val result = recognizer.process(image).await()
-                
-                Log.d("ReceiptViewModel", "--- RAW OCR START ---")
-                result.text.lines().forEach { Log.d("ReceiptViewModel", "Line: $it") }
-                Log.d("ReceiptViewModel", "--- RAW OCR END ---")
-                
-                val items = ReceiptParser.parse(result)
-                Log.d("ReceiptViewModel", "Parsed Items: ${items.size}")
+                var items: List<ScannedItem> = emptyList()
+
+                val apiKey = BuildConfig.GEMINI_API_KEY
+                if (apiKey.isNotBlank()) {
+                    try {
+                        items = GeminiReceiptClient.parseReceipt(context, uri, apiKey)
+                        Log.d("ReceiptViewModel", "Gemini parsed ${items.size} items")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w("ReceiptViewModel", "Gemini failed, using ML Kit: ${e.message}")
+                    }
+                }
+
+                if (items.isEmpty()) {
+                    val image = InputImage.fromFilePath(context, uri)
+                    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                    val result = recognizer.process(image).await()
+                    Log.d("ReceiptViewModel", "--- RAW OCR START ---")
+                    result.text.lines().forEach { Log.d("ReceiptViewModel", "Line: $it") }
+                    Log.d("ReceiptViewModel", "--- RAW OCR END ---")
+                    items = ReceiptParser.parse(result)
+                }
+
                 _scannedItems.value = items
                 _uiState.value = ReceiptUiState.Reviewing
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = ReceiptUiState.Error(e.message ?: "Failed to process image")
             }
