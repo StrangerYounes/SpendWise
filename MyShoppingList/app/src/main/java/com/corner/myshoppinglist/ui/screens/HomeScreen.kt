@@ -66,6 +66,10 @@ fun HomeScreen(
     val currentDisplayLists = if (selectedTabIndex == 0) activeLists else completedLists
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
+    val groceriesColor = remember(categories) {
+        categories.find { it.name == "Groceries" }?.color
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -177,6 +181,7 @@ fun HomeScreen(
                         ShoppingListCard(
                             item = item,
                             currencySymbol = currencySymbol,
+                            defaultCategoryColor = groceriesColor,
                             onClick = { onNavigateToDetail(item.shoppingList.id) },
                             onDelete = { viewModel.deleteShoppingList(item.shoppingList) },
                             onEdit = { listToEdit = item.shoppingList }
@@ -371,6 +376,7 @@ fun HomeScreen(
         var categoryName by remember { mutableStateOf("") }
         var editingCategory by remember { mutableStateOf<com.corner.myshoppinglist.data.local.entities.Category?>(null) }
         var selectedColor by remember { mutableStateOf(0xFF4CAF50.toInt()) } // Default green
+        var pickerResetKey by remember { mutableIntStateOf(0) }
 
         AlertDialog(
             onDismissRequest = { 
@@ -378,71 +384,90 @@ fun HomeScreen(
                 editingCategory = null
                 categoryName = ""
                 selectedColor = 0xFF4CAF50.toInt()
+                pickerResetKey++
             },
             title = { Text(if (editingCategory == null) "Manage Categories" else "Edit Category") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     if (editingCategory == null) {
-                        Text("Existing Categories", style = MaterialTheme.typography.titleSmall)
-                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                            items(categories) { category ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            editingCategory = category
-                                            categoryName = category.name
-                                            selectedColor = category.color
-                                        }
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier.size(16.dp)
-                                                .background(Color(category.color), MaterialTheme.shapes.extraSmall)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(category.name)
+                        item {
+                            Text("Existing Categories", style = MaterialTheme.typography.titleSmall)
+                        }
+                        items(categories) { category ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        editingCategory = category
+                                        categoryName = category.name
+                                        selectedColor = category.color
+                                        pickerResetKey++
                                     }
-                                    if (category.name != "Groceries") {
-                                        IconButton(onClick = { viewModel.deleteCategory(category) }) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
-                                        }
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier.size(16.dp)
+                                            .background(Color(category.color), MaterialTheme.shapes.extraSmall)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(category.name)
+                                }
+                                if (category.name != "Groceries") {
+                                    IconButton(onClick = { viewModel.deleteCategory(category) }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
                                     }
                                 }
                             }
                         }
-                        HorizontalDivider()
+                        item {
+                            HorizontalDivider()
+                        }
                     }
 
-                    Text(
-                        if (editingCategory == null) "Add New Category" else "Edit Category Settings", 
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    TextField(
-                        value = categoryName,
-                        onValueChange = { categoryName = it },
-                        placeholder = { Text("Category name") },
-                        singleLine = true,
-                        enabled = editingCategory?.name != "Groceries",
-                        trailingIcon = {
-                            if (categoryName.isNotEmpty() && editingCategory?.name != "Groceries") {
-                                IconButton(onClick = { categoryName = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    item {
+                        Text(
+                            if (editingCategory == null) "Add New Category" else "Edit Category Settings", 
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    
+                    item {
+                        TextField(
+                            value = categoryName,
+                            onValueChange = { categoryName = it },
+                            placeholder = { Text("Category name") },
+                            singleLine = true,
+                            enabled = editingCategory?.name != "Groceries",
+                            modifier = Modifier.fillMaxWidth(),
+                            trailingIcon = {
+                                if (categoryName.isNotEmpty() && editingCategory?.name != "Groceries") {
+                                    IconButton(onClick = { categoryName = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    }
                                 }
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-                    )
+                            },
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                        )
+                    }
                     
-                    Text("Select Color", style = MaterialTheme.typography.labelSmall)
+                    item {
+                        Text("Select Color", style = MaterialTheme.typography.labelSmall)
+                    }
                     
-                    HsvColorPicker(
-                        initialColor = selectedColor,
-                        onColorChanged = { selectedColor = it }
-                    )
+                    item {
+                        key(pickerResetKey) {
+                            HsvColorPicker(
+                                initialColor = selectedColor,
+                                onColorChanged = { selectedColor = it }
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -455,10 +480,12 @@ fun HomeScreen(
                                 editingCategory = null
                                 categoryName = ""
                                 selectedColor = 0xFF4CAF50.toInt()
+                                pickerResetKey++
                             } else {
                                 viewModel.addCategory(categoryName, selectedColor)
                                 categoryName = ""
                                 selectedColor = 0xFF4CAF50.toInt()
+                                pickerResetKey++
                             }
                         }
                     }
@@ -473,6 +500,7 @@ fun HomeScreen(
                             editingCategory = null
                             categoryName = ""
                             selectedColor = 0xFF4CAF50.toInt()
+                            pickerResetKey++
                         } else {
                             showCategoryDialog = false 
                         }
@@ -490,15 +518,15 @@ fun HsvColorPicker(
     initialColor: Int,
     onColorChanged: (Int) -> Unit
 ) {
-    val hsv = remember(initialColor) {
+    val hsv = remember {
         val res = FloatArray(3)
         AndroidColor.colorToHSV(initialColor, res)
         res
     }
 
-    var hue by remember(initialColor) { mutableStateOf(hsv[0]) }
-    var saturation by remember(initialColor) { mutableStateOf(hsv[1]) }
-    var value by remember(initialColor) { mutableStateOf(hsv[2]) }
+    var hue by remember { mutableStateOf(hsv[0]) }
+    var saturation by remember { mutableStateOf(hsv[1]) }
+    var value by remember { mutableStateOf(hsv[2]) }
 
     val currentColor = remember(hue, saturation, value) {
         AndroidColor.HSVToColor(floatArrayOf(hue, saturation, value))
@@ -651,6 +679,7 @@ fun HsvColorPicker(
 fun ShoppingListCard(
     item: ShoppingListWithDetails,
     currencySymbol: String,
+    defaultCategoryColor: Int? = null,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit
@@ -680,6 +709,7 @@ fun ShoppingListCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         val categoryName = item.category?.name ?: "Groceries"
                         val categoryColor = item.category?.color?.let { Color(it) } 
+                            ?: defaultCategoryColor?.let { Color(it) }
                             ?: Color(0xFF4CAF50)
                         
                         Surface(

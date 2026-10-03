@@ -16,6 +16,7 @@ interface ShoppingListDao {
         FROM shopping_lists sl
         LEFT JOIN shopping_items si ON sl.id = si.listId
         LEFT JOIN stores s ON sl.storeId = s.id
+        LEFT JOIN categories c ON sl.categoryId = c.id
         GROUP BY sl.id
         ORDER BY CASE WHEN sl.isCompleted = 1 THEN sl.completedDate ELSE sl.createdDate END DESC
     """)
@@ -45,6 +46,7 @@ interface ShoppingListDao {
         FROM shopping_lists sl
         LEFT JOIN shopping_items si ON sl.id = si.listId
         LEFT JOIN stores s ON sl.storeId = s.id
+        LEFT JOIN categories c ON sl.categoryId = c.id
         WHERE sl.name LIKE '%' || :query || '%'
         GROUP BY sl.id
         ORDER BY CASE WHEN sl.isCompleted = 1 THEN sl.completedDate ELSE sl.createdDate END DESC
